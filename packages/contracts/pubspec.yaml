@@ -1,0 +1,6 @@
+name: fera_contracts
+description: Contratos públicos da API Fera Metalúrgica, sem dependência de Flutter.
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: '>=3.8.0 <4.0.0'

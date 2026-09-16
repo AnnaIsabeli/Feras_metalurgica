@@ -1,0 +1,45 @@
+name: Validate architecture
+on: [push, pull_request]
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: fera
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: fera_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U fera -d fera_test"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://fera:ci_only_password@localhost:5432/fera_test?sslmode=disable
+      PGPASSWORD: ci_only_password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: psql -h localhost -U fera -d fera_test -v ON_ERROR_STOP=1 -f database/migrations/001_initial.sql -f database/seeds/development.sql
+      - run: dart pub get
+        working-directory: services/api
+      - run: dart analyze --fatal-infos
+        working-directory: services/api
+      - run: dart test
+        working-directory: services/api
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: apps/mobile
+      - run: flutter analyze
+        working-directory: apps/mobile
+      - run: flutter test
+        working-directory: apps/mobile
+      - run: flutter build web
+        working-directory: apps/mobile

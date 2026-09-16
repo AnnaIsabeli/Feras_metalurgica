@@ -36,7 +36,7 @@ Usamos um backend único organizado por módulos, sem microsserviços nesta fase
 Requisitos: Flutter stable com Dart >=3.8, Docker Desktop com engine Linux rodando, Git e Chrome.
 
 1. Copie `.env.example` para `.env`. Configure uma senha local alfanumérica (caracteres especiais
-   na URL do PostgreSQL precisam ser codificados). Nunca envie `.env` ao GitHub.
+   na URL do PostgreSQL precisam ser codificados).
 2. Na raiz do repositório, execute no PowerShell:
 
 ```powershell
@@ -103,5 +103,4 @@ Sem essa variável ele é ignorado, não aprovado. O GitHub Actions prepara essa
 
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [API implementada](docs/API.md)
-- [Roadmap](docs/ROADMAP.md)
 - [Validação e limitações](docs/VALIDATION.md)

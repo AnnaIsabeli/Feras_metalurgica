@@ -22,10 +22,11 @@ Future<void> main() async {
   );
   final server = await shelf_io.serve(handler, config.host, config.port);
   stdout.writeln('Fera API: http://${server.address.host}:${server.port}');
-  if (config.devAuth)
+  if (config.devAuth) {
     stdout.writeln(
       'DEMONSTRAÇÃO LOCAL: autenticação Google ainda não implementada.',
     );
+  }
   ProcessSignal.sigint.watch().listen((_) async {
     await server.close(force: true);
     await pool.close();

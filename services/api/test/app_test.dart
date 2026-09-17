@@ -44,7 +44,7 @@ void main() {
     Uri.parse('http://localhost$path'),
     headers: {
       if (token != null) 'authorization': 'Bearer $token',
-      if (origin != null) 'origin': origin,
+      'origin': ?origin,
       'content-type': 'application/json',
     },
     body: body == null ? null : jsonEncode(body),

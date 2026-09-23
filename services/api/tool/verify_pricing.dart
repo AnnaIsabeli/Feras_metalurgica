@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
-import '../lib/src/pricing/pricing_calculator.dart';
-import '../lib/src/pricing/pricing_input.dart';
-import '../lib/src/pricing/pricing_result.dart';
+
+import 'package:fera_api/src/pricing/pricing_calculator.dart';
+import 'package:fera_api/src/pricing/pricing_input.dart';
+import 'package:fera_api/src/pricing/pricing_result.dart';
 
 int checks = 0;
 void check(bool ok, String message) {

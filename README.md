@@ -103,4 +103,5 @@ Sem essa variável ele é ignorado, não aprovado. O GitHub Actions prepara essa
 
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [API implementada](docs/API.md)
+- [Regras e motor de precificação — Sprint 2](docs/PRICING.md)
 - [Validação e limitações](docs/VALIDATION.md)

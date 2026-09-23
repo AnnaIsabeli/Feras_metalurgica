@@ -1,0 +1,919 @@
+{
+  "source": "Precificador_SemRateio_Fera_Metalúrgica.xlsx",
+  "driveFileId": "1QurSq4K30fTYxFvBojDME49EIcLQyUkP",
+  "extractedOn": "2026-09-23",
+  "cases": [
+    {
+      "name": "Portão Aço 3M / Orçamento Simples",
+      "source": "Preco_Portão!D7:D44",
+      "costs": [
+        {
+          "name": "Metalon 40x30",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 80.0,
+          "source": "Portão Aço 3M!B8:E8; Custos dos Insumos!H19:I19"
+        },
+        {
+          "name": "Metalon 10x10",
+          "quantity": 65.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B9:E9; Custos dos Insumos!H18:I18"
+        },
+        {
+          "name": "Metalon 20x20",
+          "quantity": 9.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B10:E10; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 0.8,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Portão Aço 3M!B11:E11; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 0.5,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Portão Aço 3M!B12:E12; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Gás (MIG/TIG)",
+          "quantity": 1.5,
+          "purchaseQuantity": 7.0,
+          "purchaseCost": 245.0,
+          "source": "Portão Aço 3M!B13:E13; Custos dos Insumos!H14:I14"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Portão Aço 3M!B14:E14; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Disco flap/desbaste",
+          "quantity": 2.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 18.0,
+          "source": "Portão Aço 3M!B15:E15; Custos dos Insumos!H12:I12"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 8.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Portão Aço 3M!B17:E17; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Fundo anticorrosivo",
+          "quantity": 2.0,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 190.0,
+          "source": "Portão Aço 3M!B18:E18; Custos dos Insumos!H9:I9"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 2.5,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Portão Aço 3M!B19:E19; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Portão Aço 3M!B20:E20; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Brocas",
+          "quantity": 10.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 20.0,
+          "source": "Portão Aço 3M!B21:E21; Custos dos Insumos!H11:I11"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.045,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.03,
+        "commissionRate": 0.02,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.4,
+        "targetNetMarginRate": 0.15
+      },
+      "practicedPrice": 3000.0,
+      "suggested": {
+        "revenue": 2967.41784,
+        "cmv": 1053.433333,
+        "variableExpenses": 281.9046948,
+        "contributionMargin": 1632.079812,
+        "contributionMarginRate": 0.55,
+        "fixedExpenses": 1186.967136,
+        "netProfit": 445.1126761,
+        "netMarginRate": 0.15
+      },
+      "practiced": {
+        "revenue": 3000.0,
+        "cmv": 1053.433333,
+        "variableExpenses": 285,
+        "contributionMargin": 1661.566667,
+        "contributionMarginRate": 0.5538555556,
+        "fixedExpenses": 1200,
+        "netProfit": 461.5666667,
+        "netMarginRate": 0.1538555556
+      }
+    },
+    {
+      "name": "Portão Aço 3M / MEI",
+      "source": "Preco_Portão!E7:E44",
+      "costs": [
+        {
+          "name": "Metalon 40x30",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 80.0,
+          "source": "Portão Aço 3M!B8:E8; Custos dos Insumos!H19:I19"
+        },
+        {
+          "name": "Metalon 10x10",
+          "quantity": 65.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B9:E9; Custos dos Insumos!H18:I18"
+        },
+        {
+          "name": "Metalon 20x20",
+          "quantity": 9.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B10:E10; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 0.8,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Portão Aço 3M!B11:E11; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 0.5,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Portão Aço 3M!B12:E12; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Gás (MIG/TIG)",
+          "quantity": 1.5,
+          "purchaseQuantity": 7.0,
+          "purchaseCost": 245.0,
+          "source": "Portão Aço 3M!B13:E13; Custos dos Insumos!H14:I14"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Portão Aço 3M!B14:E14; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Disco flap/desbaste",
+          "quantity": 2.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 18.0,
+          "source": "Portão Aço 3M!B15:E15; Custos dos Insumos!H12:I12"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 8.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Portão Aço 3M!B17:E17; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Fundo anticorrosivo",
+          "quantity": 2.0,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 190.0,
+          "source": "Portão Aço 3M!B18:E18; Custos dos Insumos!H9:I9"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 2.5,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Portão Aço 3M!B19:E19; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Portão Aço 3M!B20:E20; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Brocas",
+          "quantity": 10.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 20.0,
+          "source": "Portão Aço 3M!B21:E21; Custos dos Insumos!H11:I11"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.0,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.03,
+        "commissionRate": 0.02,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.3416666666666667,
+        "targetNetMarginRate": 0.2
+      },
+      "practicedPrice": 2300.0,
+      "suggested": {
+        "revenue": 2579.836735,
+        "cmv": 1053.433333,
+        "variableExpenses": 128.9918367,
+        "contributionMargin": 1397.411565,
+        "contributionMarginRate": 0.5416666667,
+        "fixedExpenses": 881.4442177,
+        "netProfit": 515.9673469,
+        "netMarginRate": 0.2
+      },
+      "practiced": {
+        "revenue": 2300.0,
+        "cmv": 1053.433333,
+        "variableExpenses": 115,
+        "contributionMargin": 1131.566667,
+        "contributionMarginRate": 0.4919855072,
+        "fixedExpenses": 785.8333333,
+        "netProfit": 345.7333333,
+        "netMarginRate": 0.1503188406
+      }
+    },
+    {
+      "name": "Portão Aço 3M / SP",
+      "source": "Preco_Portão!F7:F44",
+      "costs": [
+        {
+          "name": "Metalon 40x30",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 80.0,
+          "source": "Portão Aço 3M!B8:E8; Custos dos Insumos!H19:I19"
+        },
+        {
+          "name": "Metalon 10x10",
+          "quantity": 65.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B9:E9; Custos dos Insumos!H18:I18"
+        },
+        {
+          "name": "Metalon 20x20",
+          "quantity": 9.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B10:E10; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 0.8,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Portão Aço 3M!B11:E11; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 0.5,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Portão Aço 3M!B12:E12; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Gás (MIG/TIG)",
+          "quantity": 1.5,
+          "purchaseQuantity": 7.0,
+          "purchaseCost": 245.0,
+          "source": "Portão Aço 3M!B13:E13; Custos dos Insumos!H14:I14"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Portão Aço 3M!B14:E14; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Disco flap/desbaste",
+          "quantity": 2.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 18.0,
+          "source": "Portão Aço 3M!B15:E15; Custos dos Insumos!H12:I12"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 8.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Portão Aço 3M!B17:E17; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Fundo anticorrosivo",
+          "quantity": 2.0,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 190.0,
+          "source": "Portão Aço 3M!B18:E18; Custos dos Insumos!H9:I9"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 2.5,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Portão Aço 3M!B19:E19; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Portão Aço 3M!B20:E20; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Brocas",
+          "quantity": 10.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 20.0,
+          "source": "Portão Aço 3M!B21:E21; Custos dos Insumos!H11:I11"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.04,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.0,
+        "commissionRate": 0.03,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.1,
+        "targetNetMarginRate": 0.2
+      },
+      "practicedPrice": 2300.0,
+      "suggested": {
+        "revenue": 1672.116402,
+        "cmv": 1053.433333,
+        "variableExpenses": 117.0481481,
+        "contributionMargin": 501.6349206,
+        "contributionMarginRate": 0.3,
+        "fixedExpenses": 167.2116402,
+        "netProfit": 334.4232804,
+        "netMarginRate": 0.2
+      },
+      "practiced": {
+        "revenue": 2300.0,
+        "cmv": 1053.433333,
+        "variableExpenses": 161,
+        "contributionMargin": 1085.566667,
+        "contributionMarginRate": 0.4719855072,
+        "fixedExpenses": 230,
+        "netProfit": 855.5666667,
+        "netMarginRate": 0.3719855072
+      }
+    },
+    {
+      "name": "Portão Aço 3M / RS",
+      "source": "Preco_Portão!G7:G44",
+      "costs": [
+        {
+          "name": "Metalon 40x30",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 80.0,
+          "source": "Portão Aço 3M!B8:E8; Custos dos Insumos!H19:I19"
+        },
+        {
+          "name": "Metalon 10x10",
+          "quantity": 65.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B9:E9; Custos dos Insumos!H18:I18"
+        },
+        {
+          "name": "Metalon 20x20",
+          "quantity": 9.4,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Portão Aço 3M!B10:E10; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 0.8,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Portão Aço 3M!B11:E11; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 0.5,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Portão Aço 3M!B12:E12; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Gás (MIG/TIG)",
+          "quantity": 1.5,
+          "purchaseQuantity": 7.0,
+          "purchaseCost": 245.0,
+          "source": "Portão Aço 3M!B13:E13; Custos dos Insumos!H14:I14"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Portão Aço 3M!B14:E14; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Disco flap/desbaste",
+          "quantity": 2.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 18.0,
+          "source": "Portão Aço 3M!B15:E15; Custos dos Insumos!H12:I12"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 8.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Portão Aço 3M!B17:E17; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Fundo anticorrosivo",
+          "quantity": 2.0,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 190.0,
+          "source": "Portão Aço 3M!B18:E18; Custos dos Insumos!H9:I9"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 2.5,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Portão Aço 3M!B19:E19; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Portão Aço 3M!B20:E20; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Brocas",
+          "quantity": 10.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 20.0,
+          "source": "Portão Aço 3M!B21:E21; Custos dos Insumos!H11:I11"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.04,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.0,
+        "commissionRate": 0.03,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.15,
+        "targetNetMarginRate": 0.15
+      },
+      "practicedPrice": 2200.0,
+      "suggested": {
+        "revenue": 1672.116402,
+        "cmv": 1053.433333,
+        "variableExpenses": 117.0481481,
+        "contributionMargin": 501.6349206,
+        "contributionMarginRate": 0.3,
+        "fixedExpenses": 250.8174603,
+        "netProfit": 250.8174603,
+        "netMarginRate": 0.15
+      },
+      "practiced": {
+        "revenue": 2200.0,
+        "cmv": 1053.433333,
+        "variableExpenses": 154,
+        "contributionMargin": 992.5666667,
+        "contributionMarginRate": 0.4511666667,
+        "fixedExpenses": 330,
+        "netProfit": 662.5666667,
+        "netMarginRate": 0.3011666667
+      }
+    },
+    {
+      "name": "Prateleira_2 / Orçamento Simples",
+      "source": "Preco_Prateleira_2!D7:D44",
+      "costs": [
+        {
+          "name": "Metalon 20x20",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Prateleira_2!B8:E8; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 20.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Prateleira_2!B9:E9; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 9.4,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Prateleira_2!B10:E10; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Prateleira_2!B11:E11; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 3.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Prateleira_2!B12:E12; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 0.3,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Prateleira_2!B13:E13; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 0.15,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Prateleira_2!B14:E14; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Tabua Madeira Pinus",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 7.2,
+          "source": "Prateleira_2!B15:E15; Custos dos Insumos!H21:I21"
+        },
+        {
+          "name": "Verniz para madeira ",
+          "quantity": 0.3,
+          "purchaseQuantity": 0.9,
+          "purchaseCost": 42.0,
+          "source": "Prateleira_2!B16:E16; Custos dos Insumos!H20:I20"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.045,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.03,
+        "commissionRate": 0.02,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.4,
+        "targetNetMarginRate": 0.2
+      },
+      "practicedPrice": 1900.0,
+      "suggested": {
+        "revenue": 2569.617486,
+        "cmv": 783.7333333,
+        "variableExpenses": 244.1136612,
+        "contributionMargin": 1541.770492,
+        "contributionMarginRate": 0.6,
+        "fixedExpenses": 1027.846995,
+        "netProfit": 513.9234973,
+        "netMarginRate": 0.2
+      },
+      "practiced": {
+        "revenue": 1900.0,
+        "cmv": 783.7333333,
+        "variableExpenses": 180.5,
+        "contributionMargin": 935.7666667,
+        "contributionMarginRate": 0.4925087719,
+        "fixedExpenses": 760,
+        "netProfit": 175.7666667,
+        "netMarginRate": 0.09250877193
+      }
+    },
+    {
+      "name": "Prateleira_2 / MEI",
+      "source": "Preco_Prateleira_2!E7:E44",
+      "costs": [
+        {
+          "name": "Metalon 20x20",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Prateleira_2!B8:E8; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 20.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Prateleira_2!B9:E9; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 9.4,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Prateleira_2!B10:E10; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Prateleira_2!B11:E11; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 3.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Prateleira_2!B12:E12; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 0.3,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Prateleira_2!B13:E13; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 0.15,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Prateleira_2!B14:E14; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Tabua Madeira Pinus",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 7.2,
+          "source": "Prateleira_2!B15:E15; Custos dos Insumos!H21:I21"
+        },
+        {
+          "name": "Verniz para madeira ",
+          "quantity": 0.3,
+          "purchaseQuantity": 0.9,
+          "purchaseCost": 42.0,
+          "source": "Prateleira_2!B16:E16; Custos dos Insumos!H20:I20"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.0,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.03,
+        "commissionRate": 0.02,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.3416666666666667,
+        "targetNetMarginRate": 0.2
+      },
+      "practicedPrice": 2300.0,
+      "suggested": {
+        "revenue": 1919.346939,
+        "cmv": 783.7333333,
+        "variableExpenses": 95.96734694,
+        "contributionMargin": 1039.646259,
+        "contributionMarginRate": 0.5416666667,
+        "fixedExpenses": 655.7768707,
+        "netProfit": 383.8693878,
+        "netMarginRate": 0.2
+      },
+      "practiced": {
+        "revenue": 2300.0,
+        "cmv": 783.7333333,
+        "variableExpenses": 115,
+        "contributionMargin": 1401.266667,
+        "contributionMarginRate": 0.6092463768,
+        "fixedExpenses": 785.8333333,
+        "netProfit": 615.4333333,
+        "netMarginRate": 0.2675797101
+      }
+    },
+    {
+      "name": "Prateleira_2 / SP",
+      "source": "Preco_Prateleira_2!F7:F44",
+      "costs": [
+        {
+          "name": "Metalon 20x20",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Prateleira_2!B8:E8; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 20.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Prateleira_2!B9:E9; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 9.4,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Prateleira_2!B10:E10; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Prateleira_2!B11:E11; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 3.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Prateleira_2!B12:E12; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 0.3,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Prateleira_2!B13:E13; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 0.15,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Prateleira_2!B14:E14; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Tabua Madeira Pinus",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 7.2,
+          "source": "Prateleira_2!B15:E15; Custos dos Insumos!H21:I21"
+        },
+        {
+          "name": "Verniz para madeira ",
+          "quantity": 0.3,
+          "purchaseQuantity": 0.9,
+          "purchaseCost": 42.0,
+          "source": "Prateleira_2!B16:E16; Custos dos Insumos!H20:I20"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.04,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.0,
+        "commissionRate": 0.03,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.1,
+        "targetNetMarginRate": 0.2
+      },
+      "practicedPrice": 2300.0,
+      "suggested": {
+        "revenue": 1244.021164,
+        "cmv": 783.7333333,
+        "variableExpenses": 87.08148148,
+        "contributionMargin": 373.2063492,
+        "contributionMarginRate": 0.3,
+        "fixedExpenses": 124.4021164,
+        "netProfit": 248.8042328,
+        "netMarginRate": 0.2
+      },
+      "practiced": {
+        "revenue": 2300.0,
+        "cmv": 783.7333333,
+        "variableExpenses": 161,
+        "contributionMargin": 1355.266667,
+        "contributionMarginRate": 0.5892463768,
+        "fixedExpenses": 230,
+        "netProfit": 1125.266667,
+        "netMarginRate": 0.4892463768
+      }
+    },
+    {
+      "name": "Prateleira_2 / RS",
+      "source": "Preco_Prateleira_2!G7:G44",
+      "costs": [
+        {
+          "name": "Metalon 20x20",
+          "quantity": 11.6,
+          "purchaseQuantity": 6.0,
+          "purchaseCost": 22.0,
+          "source": "Prateleira_2!B8:E8; Custos dos Insumos!H17:I17"
+        },
+        {
+          "name": "Eletrodo",
+          "quantity": 20.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 32.0,
+          "source": "Prateleira_2!B9:E9; Custos dos Insumos!H15:I15"
+        },
+        {
+          "name": "Arame de solda",
+          "quantity": 9.4,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 300.0,
+          "source": "Prateleira_2!B10:E10; Custos dos Insumos!H16:I16"
+        },
+        {
+          "name": "Disco de corte",
+          "quantity": 1.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 8.0,
+          "source": "Prateleira_2!B11:E11; Custos dos Insumos!H13:I13"
+        },
+        {
+          "name": "Lixa 360 Ultra Soft",
+          "quantity": 3.0,
+          "purchaseQuantity": 100.0,
+          "purchaseCost": 120.0,
+          "source": "Prateleira_2!B12:E12; Custos dos Insumos!H10:I10"
+        },
+        {
+          "name": "Tinta esmalte / PU",
+          "quantity": 0.3,
+          "purchaseQuantity": 5.0,
+          "purchaseCost": 360.0,
+          "source": "Prateleira_2!B13:E13; Custos dos Insumos!H8:I8"
+        },
+        {
+          "name": "Thinner",
+          "quantity": 0.15,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 28.0,
+          "source": "Prateleira_2!B14:E14; Custos dos Insumos!H25:I25"
+        },
+        {
+          "name": "Tabua Madeira Pinus",
+          "quantity": 3.0,
+          "purchaseQuantity": 1.0,
+          "purchaseCost": 7.2,
+          "source": "Prateleira_2!B15:E15; Custos dos Insumos!H21:I21"
+        },
+        {
+          "name": "Verniz para madeira ",
+          "quantity": 0.3,
+          "purchaseQuantity": 0.9,
+          "purchaseCost": 42.0,
+          "source": "Prateleira_2!B16:E16; Custos dos Insumos!H20:I20"
+        }
+      ],
+      "rates": {
+        "simplesNacionalRate": 0.04,
+        "pisCofinsRate": 0.0,
+        "irCsllRate": 0.0,
+        "freightRate": 0.0,
+        "commissionRate": 0.03,
+        "substitutionTaxRate": 0.0,
+        "fixedExpenseRate": 0.15,
+        "targetNetMarginRate": 0.15
+      },
+      "practicedPrice": 2200.0,
+      "suggested": {
+        "revenue": 1244.021164,
+        "cmv": 783.7333333,
+        "variableExpenses": 87.08148148,
+        "contributionMargin": 373.2063492,
+        "contributionMarginRate": 0.3,
+        "fixedExpenses": 186.6031746,
+        "netProfit": 186.6031746,
+        "netMarginRate": 0.15
+      },
+      "practiced": {
+        "revenue": 2200.0,
+        "cmv": 783.7333333,
+        "variableExpenses": 154,
+        "contributionMargin": 1262.266667,
+        "contributionMarginRate": 0.5737575758,
+        "fixedExpenses": 330,
+        "netProfit": 932.2666667,
+        "netMarginRate": 0.4237575758
+      }
+    }
+  ]
+}

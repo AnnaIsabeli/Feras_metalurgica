@@ -156,51 +156,54 @@ class _NewQuoteScreenState extends State<NewQuoteScreen> {
           constraints: const BoxConstraints(maxWidth: 800),
           child: Form(
             key: _form,
-            child: ListView(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              children: [
-                TextFormField(
-                  controller: _product,
-                  maxLength: 120,
-                  decoration: const InputDecoration(labelText: 'Produto'),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Informe o produto.'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _description,
-                  minLines: 3,
-                  maxLines: 6,
-                  maxLength: 4000,
-                  decoration: const InputDecoration(
-                    labelText: 'Descrição do pedido',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _product,
+                    maxLength: 120,
+                    decoration: const InputDecoration(labelText: 'Produto'),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Informe o produto.'
+                        : null,
                   ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Descreva seu pedido.'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _quantity,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Quantidade'),
-                  validator: (v) {
-                    final n = int.tryParse(v ?? '');
-                    return n == null || n < 1 || n > 10000
-                        ? 'Informe um número inteiro de 1 a 10000.'
-                        : null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                if (widget.model.error != null) Text(widget.model.error!),
-                FilledButton(
-                  onPressed: widget.model.loading ? null : _submit,
-                  child: Text(
-                    widget.model.loading ? 'Enviando…' : 'Enviar solicitação',
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _description,
+                    minLines: 3,
+                    maxLines: 6,
+                    maxLength: 4000,
+                    decoration: const InputDecoration(
+                      labelText: 'Descrição do pedido',
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Descreva seu pedido.'
+                        : null,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _quantity,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Quantidade'),
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      return n == null || n < 1 || n > 10000
+                          ? 'Informe um número inteiro de 1 a 10000.'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  if (widget.model.error != null) Text(widget.model.error!),
+                  FilledButton(
+                    onPressed: widget.model.loading ? null : _submit,
+                    child: Text(
+                      widget.model.loading ? 'Enviando…' : 'Enviar solicitação',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

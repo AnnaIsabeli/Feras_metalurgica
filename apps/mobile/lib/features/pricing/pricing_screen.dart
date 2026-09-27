@@ -89,7 +89,10 @@ class _PricingScreenState extends State<PricingScreen> {
 
   Future<void> _calculate() async {
     if (_busy) return;
-    if (!_form.currentState!.validate()) return;
+    if (!_form.currentState!.validate()) {
+      setState(() => _error = 'Revise os campos destacados antes de calcular.');
+      return;
+    }
     final rateTotal = _rates.values.fold<double>(
       0,
       (sum, field) => sum + parseDecimal(field.text)!,

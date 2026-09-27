@@ -4,6 +4,7 @@ import 'package:shelf_router/shelf_router.dart';
 import '../auth/principal.dart';
 import '../core/api_error.dart';
 import '../quotes/quote_service.dart';
+import 'pricing_endpoint.dart';
 
 Response jsonResponse(int status, Object body) => Response(
   status,
@@ -26,6 +27,39 @@ Handler buildHandler({
       throw const ApiError(401, 'unauthorized', 'Autenticação necessária.');
     }
     return principal;
+  }
+
+  Future<Map<String, dynamic>> readJson(Request request) async {
+    if (!(request.headers['content-type'] ?? '').toLowerCase().startsWith(
+      'application/json',
+    )) {
+      throw const ApiError(
+        415,
+        'unsupported_media_type',
+        'Envie application/json.',
+      );
+    }
+    final bytes = <int>[];
+    await for (final chunk in request.read()) {
+      if (bytes.length + chunk.length > 16384) {
+        throw const ApiError(
+          413,
+          'payload_too_large',
+          'Solicitação muito grande.',
+        );
+      }
+      bytes.addAll(chunk);
+    }
+    final Object? data;
+    try {
+      data = jsonDecode(utf8.decode(bytes));
+    } on FormatException {
+      throw const ApiError(400, 'invalid_json', 'JSON inválido.');
+    }
+    if (data is! Map<String, dynamic>) {
+      throw const ApiError(400, 'invalid_json', 'Envie um objeto JSON.');
+    }
+    return data;
   }
 
   final router = Router()
@@ -52,49 +86,37 @@ Handler buildHandler({
         'items': items.map((q) => q.toJson()).toList(),
       });
     })
-    ..post('/v1/quote-requests', (Request request) async {
+    ..post('/v1/pricing/calculate', (Request request) async {
       final user = await actor(request);
-      if (!(request.headers['content-type'] ?? '').toLowerCase().startsWith(
-        'application/json',
-      )) {
+      if (user.role != UserRole.seller || !user.sellerApproved) {
         throw const ApiError(
-          415,
-          'unsupported_media_type',
-          'Envie application/json.',
+          403,
+          'seller_required',
+          'Somente vendedores aprovados podem calcular preços.',
         );
       }
-      final bytes = <int>[];
-      await for (final chunk in request.read()) {
-        if (bytes.length + chunk.length > 16384) {
-          throw const ApiError(
-            413,
-            'payload_too_large',
-            'Solicitação muito grande.',
-          );
-        }
-        bytes.addAll(chunk);
-      }
-      final Object? data;
-      try {
-        data = jsonDecode(utf8.decode(bytes));
-      } on FormatException {
-        throw const ApiError(400, 'invalid_json', 'JSON inválido.');
-      }
-      if (data is! Map<String, dynamic>) {
-        throw const ApiError(400, 'invalid_json', 'Envie um objeto JSON.');
-      }
+      return jsonResponse(200, calculatePricing(await readJson(request)));
+    })
+    ..post('/v1/quote-requests', (Request request) async {
+      final user = await actor(request);
+      final data = await readJson(request);
       return jsonResponse(201, (await quotes.create(user, data)).toJson());
     });
 
+  final allowedOrigins = allowedOrigin
+      .split(',')
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
+      .toSet();
   return (request) async {
     final origin = request.headers['origin'];
-    if (origin != null && origin != allowedOrigin) {
+    if (origin != null && !allowedOrigins.contains(origin)) {
       return jsonResponse(403, {
         'error': {'code': 'origin_denied', 'message': 'Origem não permitida.'},
       });
     }
     final cors = <String, String>{
-      if (origin != null) 'access-control-allow-origin': allowedOrigin,
+      if (origin != null) 'access-control-allow-origin': origin,
       'vary': 'Origin',
       'access-control-allow-methods': 'GET, POST, OPTIONS',
       'access-control-allow-headers': 'Authorization, Content-Type',

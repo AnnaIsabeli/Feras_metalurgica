@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'features/pricing/pricing_screen.dart';
+import 'features/account_screen.dart';
 import 'features/quotes/quote_repository.dart';
 import 'features/quotes/quote_screen.dart';
 import 'features/quotes/quote_view_model.dart';
@@ -105,6 +107,7 @@ class _AppShellState extends State<AppShell> {
       token: widget.seller ? 'demo-seller' : 'demo-buyer',
     );
     quotes = QuoteViewModel(ApiQuoteRepository(api));
+    quotes.load();
   }
 
   @override
@@ -132,36 +135,81 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
     body: switch (index) {
-      0 => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.seller ? 'Olá, vendedor' : 'Olá, comprador',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 16),
-            const Text('Consulte e acompanhe suas solicitações de orçamento.'),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => select(1),
-              child: const Text('Abrir orçamentos'),
-            ),
-          ],
-        ),
-      ),
-      1 => QuoteScreen(model: quotes, seller: widget.seller),
-      _ => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            widget.seller
-                ? 'Acompanhamento de pedidos será implementado na próxima etapa.'
-                : 'Os canais de contato serão cadastrados na próxima etapa.',
+      0 => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text(
+                widget.seller ? 'Olá, vendedor' : 'Olá, comprador',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                widget.seller
+                    ? 'Consulte as solicitações e prepare o preço de cada produto.'
+                    : 'Descreva o que você precisa e acompanhe seus orçamentos.',
+              ),
+              const SizedBox(height: 24),
+              ListenableBuilder(
+                listenable: quotes,
+                builder: (context, _) => Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          quotes.loading
+                              ? 'Carregando solicitações…'
+                              : quotes.error != null
+                              ? 'Não foi possível atualizar as solicitações.'
+                              : '${quotes.items.length} solicitações registradas',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton.icon(
+                          onPressed: () => select(1),
+                          icon: const Icon(Icons.request_quote_outlined),
+                          label: const Text('Abrir orçamentos'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => widget.seller
+                        ? PricingScreen(api: api)
+                        : NewQuoteScreen(model: quotes),
+                  ),
+                ),
+                icon: Icon(
+                  widget.seller ? Icons.calculate_outlined : Icons.add,
+                ),
+                label: Text(
+                  widget.seller
+                      ? 'Simular preço de venda'
+                      : 'Solicitar orçamento',
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                widget.seller
+                    ? 'Os cálculos usam os custos e percentuais que você informar. A simulação não envia uma proposta.'
+                    : 'Informe produto, quantidade e os detalhes necessários para o atendimento.',
+              ),
+            ],
           ),
         ),
       ),
+      1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
+      _ => AccountScreen(api: api),
     },
     bottomNavigationBar: NavigationBar(
       selectedIndex: index,
@@ -175,13 +223,9 @@ class _AppShellState extends State<AppShell> {
           icon: Icon(Icons.request_quote_outlined),
           label: 'Orçamentos',
         ),
-        NavigationDestination(
-          icon: Icon(
-            widget.seller
-                ? Icons.inventory_2_outlined
-                : Icons.contact_support_outlined,
-          ),
-          label: widget.seller ? 'Pedidos' : 'Contato',
+        const NavigationDestination(
+          icon: Icon(Icons.account_circle_outlined),
+          label: 'Conta',
         ),
       ],
     ),

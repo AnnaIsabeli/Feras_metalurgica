@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:fera_contracts/fera_contracts.dart';
 
 import 'quote_view_model.dart';
+import '../../core/api_client.dart';
+import '../pricing/pricing_screen.dart';
 
 class QuoteScreen extends StatelessWidget {
-  const QuoteScreen({super.key, required this.model, required this.seller});
+  const QuoteScreen({
+    super.key,
+    required this.model,
+    required this.seller,
+    required this.api,
+  });
   final QuoteViewModel model;
   final bool seller;
+  final ApiClient api;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -76,21 +84,13 @@ class QuoteScreen extends StatelessWidget {
                           '${item.quantity} unidade(s) • ${_statusLabel(item.status)}',
                         ),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => showDialog<void>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: Text(item.product),
-                            content: SingleChildScrollView(
-                              child: Text(
-                                '${item.description}\n\nQuantidade: ${item.quantity}\nSituação: ${_statusLabel(item.status)}',
-                              ),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => QuoteDetailScreen(
+                              item: item,
+                              seller: seller,
+                              api: api,
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Fechar'),
-                              ),
-                            ],
                           ),
                         ),
                       ),
@@ -140,6 +140,9 @@ class _NewQuoteScreenState extends State<NewQuoteScreen> {
     );
     if (!mounted || !success) return;
     Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Solicitação enviada com sucesso.')),
+    );
     await widget.model.load();
   }
 
@@ -148,50 +151,131 @@ class _NewQuoteScreenState extends State<NewQuoteScreen> {
     appBar: AppBar(title: const Text('Solicitar orçamento')),
     body: ListenableBuilder(
       listenable: widget.model,
-      builder: (context, _) => Form(
-        key: _form,
+      builder: (context, _) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Form(
+            key: _form,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _product,
+                    maxLength: 120,
+                    decoration: const InputDecoration(labelText: 'Produto'),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Informe o produto.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _description,
+                    minLines: 3,
+                    maxLines: 6,
+                    maxLength: 4000,
+                    decoration: const InputDecoration(
+                      labelText: 'Descrição do pedido',
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Descreva seu pedido.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _quantity,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Quantidade'),
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      return n == null || n < 1 || n > 10000
+                          ? 'Informe um número inteiro de 1 a 10000.'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  if (widget.model.error != null) Text(widget.model.error!),
+                  FilledButton(
+                    onPressed: widget.model.loading ? null : _submit,
+                    child: Text(
+                      widget.model.loading ? 'Enviando…' : 'Enviar solicitação',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class QuoteDetailScreen extends StatelessWidget {
+  const QuoteDetailScreen({
+    super.key,
+    required this.item,
+    required this.seller,
+    required this.api,
+  });
+  final QuoteRequest item;
+  final bool seller;
+  final ApiClient api;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Detalhes do orçamento')),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            TextFormField(
-              controller: _product,
-              maxLength: 120,
-              decoration: const InputDecoration(labelText: 'Produto'),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o produto.' : null,
+            Text(
+              item.product,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _description,
-              minLines: 3,
-              maxLines: 6,
-              maxLength: 4000,
-              decoration: const InputDecoration(
-                labelText: 'Descrição do pedido',
-              ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Descreva seu pedido.' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _quantity,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Quantidade'),
-              validator: (v) {
-                final n = int.tryParse(v ?? '');
-                return n == null || n < 1 || n > 10000
-                    ? 'Informe um número inteiro de 1 a 10000.'
-                    : null;
-              },
+            Wrap(
+              spacing: 12,
+              children: [
+                Chip(label: Text(_statusLabel(item.status))),
+                Chip(label: Text('${item.quantity} unidade(s)')),
+              ],
             ),
             const SizedBox(height: 24),
-            if (widget.model.error != null) Text(widget.model.error!),
-            FilledButton(
-              onPressed: widget.model.loading ? null : _submit,
-              child: Text(
-                widget.model.loading ? 'Enviando…' : 'Enviar solicitação',
-              ),
+            Text(
+              'Descrição do pedido',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
+            const SizedBox(height: 8),
+            Text(item.description),
+            const SizedBox(height: 24),
+            Text(
+              'Solicitado em ${item.createdAt.toLocal().day}/${item.createdAt.toLocal().month}/${item.createdAt.toLocal().year}',
+            ),
+            const SizedBox(height: 8),
+            SelectableText('Referência: ${item.id}'),
+            const SizedBox(height: 32),
+            if (seller)
+              FilledButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => PricingScreen(
+                      api: api,
+                      product: item.product,
+                      quantity: item.quantity,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.calculate_outlined),
+                label: const Text('Precificar esta solicitação'),
+              )
+            else
+              const Text(
+                'Sua solicitação foi registrada. A proposta comercial ainda não está disponível nesta versão.',
+              ),
           ],
         ),
       ),

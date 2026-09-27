@@ -34,7 +34,7 @@ void main() {
     Object? body,
     String origin = 'https://demo.example.com',
     String type = 'application/json',
-  }) => handler(
+  }) async => handler(
     Request(
       'POST',
       Uri.parse('http://localhost/v1/pricing/calculate'),

@@ -67,11 +67,12 @@ class _PricingScreenState extends State<PricingScreen> {
   }
 
   void _changed() {
-    if (_result != null || _error != null)
+    if (_result != null || _error != null) {
       setState(() {
         _result = null;
         _error = null;
       });
+    }
   }
 
   String? _number(String? text, {bool percent = false, bool optional = false}) {

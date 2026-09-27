@@ -21,8 +21,9 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>>(
     future: _profile,
     builder: (context, snapshot) {
-      if (snapshot.connectionState != ConnectionState.done)
+      if (snapshot.connectionState != ConnectionState.done) {
         return const Center(child: CircularProgressIndicator());
+      }
       return Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),

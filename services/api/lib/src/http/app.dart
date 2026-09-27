@@ -116,7 +116,7 @@ Handler buildHandler({
       });
     }
     final cors = <String, String>{
-      if (origin != null) 'access-control-allow-origin': origin,
+      'access-control-allow-origin': ?origin,
       'vary': 'Origin',
       'access-control-allow-methods': 'GET, POST, OPTIONS',
       'access-control-allow-headers': 'Authorization, Content-Type',

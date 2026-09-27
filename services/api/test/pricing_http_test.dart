@@ -17,7 +17,7 @@ void main() {
     'costs': [
       {'name': 'Aço', 'quantity': 2, 'unitCost': 50},
     ],
-    'rates': {
+    'rates': <String, dynamic>{
       'simplesNacionalRate': .045,
       'pisCofinsRate': 0,
       'irCsllRate': 0,

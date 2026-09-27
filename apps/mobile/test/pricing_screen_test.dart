@@ -91,10 +91,11 @@ void main() {
     );
     addTearDown(api.close);
     await tester.pumpWidget(MaterialApp(home: PricingScreen(api: api)));
-    await tester.scrollUntilVisible(find.text('Calcular preço'), 400);
+    await tester.ensureVisible(find.text('Calcular preço'));
     await tester.tap(find.text('Calcular preço'));
     await tester.pumpAndSettle();
     expect(calls, 0);
+    expect(find.text('Informe o material.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

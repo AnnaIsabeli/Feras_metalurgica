@@ -1,4 +1,3 @@
-BEGIN;
 CREATE TABLE users (
   id uuid PRIMARY KEY,
   google_subject text UNIQUE,
@@ -23,4 +22,3 @@ CREATE INDEX quote_requests_buyer_created_idx ON quote_requests(buyer_id, create
 CREATE INDEX quote_requests_status_created_idx ON quote_requests(status, created_at DESC);
 -- Future migrations add materials, pricing snapshots, proposal versions and orders.
 -- Monetary totals must use integer cents; material unit prices need NUMERIC precision.
-COMMIT;

@@ -197,6 +197,17 @@ void main() {
       );
     }
   });
+  test('accepts a zero-quantity item when total CMV is positive', () {
+    final result = calculator.calculate(
+      input(
+        costs: [
+          const PricingCost(name: 'Material', quantity: 1, unitCost: 100),
+          const PricingCost(name: 'Parafuso', quantity: 0, unitCost: 5),
+        ],
+      ),
+    );
+    expect(result.cmv, 100);
+  });
   test('input snapshots its cost list', () {
     final costs = [const PricingCost(name: 'x', quantity: 1, unitCost: 100)];
     final value = input(costs: costs);

@@ -8,7 +8,7 @@ cd "$REPO"
 sudo -u antiserver git fetch origin develop
 sudo -u antiserver git checkout develop
 sudo -u antiserver git pull --ff-only origin develop
-git log -1 --oneline
+sudo -u antiserver git log -1 --oneline
 compose=(docker compose -f compose.server.yaml)
 "${compose[@]}" up -d --wait db
 # Keep private backups outside the repository and Docker volume.

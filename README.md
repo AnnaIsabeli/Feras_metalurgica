@@ -33,7 +33,7 @@ Usamos um backend único organizado por módulos, sem microsserviços nesta fase
 
 ## Demonstração local
 
-Requisitos: Flutter stable com Dart >=3.8, Docker Desktop com engine Linux rodando, Git e Chrome.
+Requisitos: Flutter stable com Dart >=3.8, Docker Desktop com engine Linux rodando, Python 3, Git e Chrome.
 
 1. Copie `.env.example` para `.env`. Configure uma senha local alfanumérica (caracteres especiais
    na URL do PostgreSQL precisam ser codificados).
@@ -81,8 +81,9 @@ de desenvolvimento. Produção exige HTTPS. O primeiro alvo de demonstração é
 docker compose down
 ```
 
-Migrações iniciais rodam apenas em volume vazio. Atualizações futuras exigem novas migrações;
-não apague um volume com dados reais para atualizar o esquema.
+As migrations são aplicadas por `python3 scripts/migrate.py` antes de iniciar a API.
+O processo preserva os dados e ignora arquivos já aplicados. Veja [Migrations](docs/MIGRATIONS.md).
+Não apague um volume com dados reais para atualizar o esquema.
 
 ## Testar
 

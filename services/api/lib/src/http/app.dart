@@ -5,6 +5,7 @@ import '../auth/principal.dart';
 import '../core/api_error.dart';
 import '../quotes/quote_service.dart';
 import 'pricing_endpoint.dart';
+import '../quotes/pricing_service.dart';
 
 Response jsonResponse(int status, Object body) => Response(
   status,
@@ -14,6 +15,7 @@ Response jsonResponse(int status, Object body) => Response(
 
 Handler buildHandler({
   required QuoteService quotes,
+  PricingService? pricings,
   required IdentityVerifier identity,
   required Future<void> Function() checkDatabase,
   required String allowedOrigin,
@@ -102,6 +104,31 @@ Handler buildHandler({
       final data = await readJson(request);
       return jsonResponse(201, (await quotes.create(user, data)).toJson());
     });
+
+  if (pricings != null) {
+    router.get(
+      '/v1/materials',
+      (Request request) async => jsonResponse(200, {
+        'items': await pricings.materials(await actor(request)),
+      }),
+    );
+    router.get(
+      '/v1/quote-requests/<id>/pricing',
+      (Request request, String id) async =>
+          jsonResponse(200, await pricings.latest(await actor(request), id)),
+    );
+    router.post('/v1/quote-requests/<id>/pricing', (
+      Request request,
+      String id,
+    ) async {
+      final user = await actor(request);
+      pricings.authorize(user);
+      return jsonResponse(
+        201,
+        await pricings.save(user, id, await readJson(request)),
+      );
+    });
+  }
 
   final allowedOrigins = allowedOrigin
       .split(',')

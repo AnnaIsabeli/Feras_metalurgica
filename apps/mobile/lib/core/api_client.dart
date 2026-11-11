@@ -3,11 +3,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
-  const ApiException(this.message);
+  const ApiException(this.message, {this.status, this.code});
   final String message;
+
+  /// Código HTTP devolvido pela API (ex.: 404). Nulo se nem chegou ao servidor.
+  final int? status;
+
+  /// Código do erro no corpo da resposta (ex.: pricing_not_found).
+  final String? code;
   @override
   String toString() => message;
 }
+
 
 class ApiClient {
   ApiClient({required this.baseUrl, required this.token, http.Client? client})
@@ -37,9 +44,11 @@ class ApiClient {
       ).timeout(const Duration(seconds: 10));
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode >= 400) {
+        final error = json['error'] as Map?;
         throw ApiException(
-          (json['error'] as Map?)?['message'] as String? ??
-              'Serviço indisponível.',
+          error?['message'] as String? ?? 'Serviço indisponível.',
+          status: response.statusCode,
+          code: error?['code'] as String?,
         );
       }
       return json;

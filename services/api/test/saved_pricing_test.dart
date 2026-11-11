@@ -169,4 +169,17 @@ void main() {
       expect(repository.saved, isNull);
     },
   );
+  test(
+    'delivery lead time is optional, validated and preserved in saved input',
+    () async {
+      final valid = pricingPayload()
+        ..['deliveryLeadTime'] = '  20 dias úteis  ';
+      expect((await call('POST', body: valid)).statusCode, 201);
+      expect(repository.saved!['input']['deliveryLeadTime'], '20 dias úteis');
+      for (final invalid in ['', 'x' * 241, 20, 'dias\nuteis']) {
+        final data = pricingPayload()..['deliveryLeadTime'] = invalid;
+        expect((await call('POST', body: data)).statusCode, 422);
+      }
+    },
+  );
 }

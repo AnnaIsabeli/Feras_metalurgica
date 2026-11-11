@@ -27,6 +27,7 @@ jobs:
       PGHOST: localhost
       PGUSER: fera
       PGDATABASE: fera_test
+      PDF_TEST_OUTPUT_DIRECTORY: build/pdf-check
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +47,16 @@ jobs:
 
       - run: dart test
         working-directory: services/api
+
+      - name: Render PDF examples
+        working-directory: services/api
+        run: dart run tool/render_quote_pdf_example.dart --all build/pdf-check
+
+      - name: Verify PDF content and confidentiality
+        run: |
+          python3 -m venv "$RUNNER_TEMP/quote-pdf-check"
+          "$RUNNER_TEMP/quote-pdf-check/bin/python" -m pip install 'pypdf==6.21.4'
+          "$RUNNER_TEMP/quote-pdf-check/bin/python" scripts/verify_quote_pdf.py services/api/build/pdf-check
 
   flutter:
     runs-on: ubuntu-latest

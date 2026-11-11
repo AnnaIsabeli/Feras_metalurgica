@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:fera_api/src/database/postgres_pricing_repository.dart';
+import 'package:fera_api/src/quotes/pricing_service.dart';
 import 'package:postgres/postgres.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:fera_api/src/auth/principal.dart';
@@ -12,6 +14,7 @@ Future<void> main() async {
   final pool = Pool.withUrl(config.databaseUrl);
   final handler = buildHandler(
     quotes: QuoteService(PostgresQuoteRepository(pool)),
+    pricings: PricingService(PostgresPricingRepository(pool)),
     identity: config.devAuth
         ? DevelopmentIdentityVerifier()
         : DenyAllIdentityVerifier(),

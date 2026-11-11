@@ -1,3 +1,4 @@
+import 'package:fera_contracts/fera_contracts.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
@@ -18,27 +19,75 @@ double? parseDecimal(String text) =>
 String money(num value) =>
     'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
 
+/// Número para exibir em um campo: vírgula decimal e sem zeros sobrando
+/// (4.5 vira "4,5"; 100.0 vira "100").
+String formatDecimal(num value) => value
+    .toStringAsFixed(6)
+    .replaceFirst(RegExp(r'0+$'), '')
+    .replaceFirst(RegExp(r'\.$'), '')
+    .replaceAll('.', ',');
+
+/// Quantas casas decimais o texto digitado tem ("2,125" -> 3).
+int decimalPlaces(String text) {
+  final clean = text.trim().replaceAll(',', '.');
+  final dot = clean.indexOf('.');
+  return dot < 0 ? 0 : clean.length - dot - 1;
+}
+
+String _two(int n) => n.toString().padLeft(2, '0');
+String dateTime(DateTime d) =>
+    '${_two(d.day)}/${_two(d.month)}/${d.year} ${_two(d.hour)}:${_two(d.minute)}';
+
+/// Material do catálogo, como devolvido por GET /v1/materials.
+class CatalogMaterial {
+  const CatalogMaterial({
+    required this.id,
+    required this.name,
+    required this.unit,
+    required this.unitCost,
+  });
+  final String id;
+  final String name;
+  final String unit;
+  final double unitCost;
+
+  factory CatalogMaterial.fromJson(Map<String, dynamic> json) =>
+      CatalogMaterial(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        unit: json['unit'] as String,
+        unitCost: (json['unitCost'] as num).toDouble(),
+      );
+
+  String get label => '$name / $unit';
+}
+
+const _manualOption = '__manual__';
+
+/// Uma linha da composição. Ou vem do catálogo ([material]) ou é digitada
+/// à mão ([manual]); enquanto nenhuma das duas, o vendedor ainda não escolheu.
 class _CostFields {
+  CatalogMaterial? material;
+  bool manual = false;
   final name = TextEditingController();
+  final unit = TextEditingController();
   final quantity = TextEditingController(text: '1');
   final unitCost = TextEditingController();
   void dispose() {
     name.dispose();
+    unit.dispose();
     quantity.dispose();
     unitCost.dispose();
   }
 }
 
 class PricingScreen extends StatefulWidget {
-  const PricingScreen({
-    super.key,
-    required this.api,
-    this.product,
-    this.quantity = 1,
-  });
+  const PricingScreen({super.key, required this.api, this.request});
   final ApiClient api;
-  final String? product;
-  final int quantity;
+
+  /// Solicitação que está sendo precificada. Nula na simulação avulsa
+  /// (nesse caso não há o que salvar).
+  final QuoteRequest? request;
   @override
   State<PricingScreen> createState() => _PricingScreenState();
 }
@@ -50,9 +99,24 @@ class _PricingScreenState extends State<PricingScreen> {
     for (final key in pricingRates.keys) key: TextEditingController(text: '0'),
   };
   final _practiced = TextEditingController();
+  List<CatalogMaterial> _materials = const [];
   Map<String, dynamic>? _result;
+  DateTime? _savedAt;
   String? _error;
+  String? _notice;
+  String? _loadError;
+  bool _loading = true;
   bool _busy = false;
+  bool _saving = false;
+
+  String? get _product => widget.request?.product;
+  int get _quantity => widget.request?.quantity ?? 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -66,11 +130,106 @@ class _PricingScreenState extends State<PricingScreen> {
     super.dispose();
   }
 
+  String _message(Object error) => error is ApiException
+      ? error.message
+      : 'Algo deu errado. Tente novamente.';
+
+  /// Última precificação salva da solicitação, ou null se ainda não existe.
+  /// "Ainda não existe" (404) é normal, não é erro.
+  Future<Map<String, dynamic>?> _latestPricing(String requestId) async {
+    try {
+      return await widget.api.get('/v1/quote-requests/$requestId/pricing');
+    } on ApiException catch (e) {
+      if (e.status == 404 && e.code == 'pricing_not_found') return null;
+      rethrow;
+    }
+  }
+
+  Future<void> _load() async {
+    try {
+      final requestId = widget.request?.id;
+      final responses = await Future.wait<Map<String, dynamic>?>([
+        widget.api.get('/v1/materials'),
+        if (requestId != null) _latestPricing(requestId),
+      ]);
+      final materials = [
+        for (final item in responses[0]!['items'] as List)
+          CatalogMaterial.fromJson(item as Map<String, dynamic>),
+      ];
+      final saved = responses.length > 1 ? responses[1] : null;
+      if (!mounted) return;
+      setState(() {
+        _materials = materials;
+        if (saved != null) _restore(saved);
+        _loading = false;
+        _loadError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = _message(e);
+        _loading = false;
+      });
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    _load();
+  }
+
+  /// Preenche a tela com a precificação salva (o que veio do servidor).
+  void _restore(Map<String, dynamic> saved) {
+    _savedAt = DateTime.tryParse(saved['createdAt'] as String? ?? '');
+    final input = saved['input'] as Map<String, dynamic>?;
+    final result = saved['result'] as Map<String, dynamic>?;
+    if (input == null || result == null) {
+      // Registro antigo, sem os detalhes: não inventamos um cálculo.
+      _notice =
+          'Esta solicitação tem uma precificação antiga, sem os detalhes. '
+          'Monte a composição novamente e salve.';
+      return;
+    }
+    final rows = <_CostFields>[];
+    for (final item in (input['costs'] as List).cast<Map<String, dynamic>>()) {
+      final row = _CostFields();
+      final inCatalog = _materials.where((m) => m.id == item['materialId']);
+      if (inCatalog.isNotEmpty) {
+        row.material = inCatalog.first;
+      } else {
+        // Digitado à mão, ou material que saiu do catálogo: usa o que foi salvo.
+        row.manual = true;
+        row.name.text = item['name'] as String;
+        row.unit.text = item['unit'] as String? ?? '';
+        row.unitCost.text = formatDecimal(item['unitCost'] as num);
+      }
+      row.quantity.text = formatDecimal(item['quantity'] as num);
+      rows.add(row);
+    }
+    for (final old in _costs) {
+      old.dispose();
+    }
+    _costs
+      ..clear()
+      ..addAll(rows);
+    final rates = input['rates'] as Map<String, dynamic>;
+    for (final key in pricingRates.keys) {
+      _rates[key]!.text = formatDecimal((rates[key] as num) * 100);
+    }
+    final practiced = input['practicedPrice'] as num?;
+    _practiced.text = practiced == null ? '' : formatDecimal(practiced);
+    _result = result;
+  }
+
   void _changed() {
-    if (_result != null || _error != null) {
+    if (_result != null || _error != null || _notice != null) {
       setState(() {
         _result = null;
         _error = null;
+        _notice = null;
       });
     }
   }
@@ -88,11 +247,34 @@ class _PricingScreenState extends State<PricingScreen> {
         : null;
   }
 
-  Future<void> _calculate() async {
-    if (_busy) return;
+  // Mesmas regras que a API aplica ao salvar (ela continua sendo a palavra final).
+  String? _quantityError(String? text) {
+    final base = _number(text);
+    if (base != null) return base;
+    final value = parseDecimal(text!)!;
+    if (value <= 0) return 'A quantidade deve ser maior que zero.';
+    if (value > 999999999.999) return 'Quantidade alta demais.';
+    if (decimalPlaces(text) > 3) return 'Use no máximo 3 casas decimais.';
+    return null;
+  }
+
+  String? _costError(String? text) {
+    final base = _number(text);
+    if (base != null) return base;
+    if (parseDecimal(text!)! > 99999999.999999) return 'Custo alto demais.';
+    if (decimalPlaces(text) > 6) return 'Use no máximo 6 casas decimais.';
+    return null;
+  }
+
+  String? _percentError(String? text) => _number(text, percent: true);
+  String? _optionalMoneyError(String? text) => _number(text, optional: true);
+
+  bool _validate() {
     if (!_form.currentState!.validate()) {
-      setState(() => _error = 'Revise os campos destacados antes de calcular.');
-      return;
+      setState(
+        () => _error = 'Revise os campos destacados antes de continuar.',
+      );
+      return false;
     }
     final rateTotal = _rates.values.fold<double>(
       0,
@@ -100,35 +282,99 @@ class _PricingScreenState extends State<PricingScreen> {
     );
     if (rateTotal >= 100) {
       setState(
-        () => _error = 'A soma dos percentuais, incluindo a margem, deve ser menor que 100%.',
+        () => _error =
+            'A soma dos percentuais, incluindo a margem, deve ser menor que 100%.',
       );
-      return;
+      return false;
     }
+    return true;
+  }
+
+  Map<String, double> get _ratesBody => {
+    for (final rate in _rates.entries)
+      rate.key: parseDecimal(rate.value.text)! / 100,
+  };
+
+  double? get _practicedPrice =>
+      _practiced.text.trim().isEmpty ? null : parseDecimal(_practiced.text);
+
+  /// Simulação: o servidor calcula, nada é salvo.
+  Future<void> _calculate() async {
+    if (_busy || !_validate()) return;
     setState(() {
       _busy = true;
+      _saving = false;
       _error = null;
+      _notice = null;
       _result = null;
     });
+    final practiced = _practicedPrice;
     try {
       final result = await widget.api.post('/v1/pricing/calculate', {
         'costs': [
           for (final cost in _costs)
             {
-              'name': cost.name.text.trim(),
+              'name': cost.material?.name ?? cost.name.text.trim(),
               'quantity': parseDecimal(cost.quantity.text),
-              'unitCost': parseDecimal(cost.unitCost.text),
+              'unitCost':
+                  cost.material?.unitCost ?? parseDecimal(cost.unitCost.text),
             },
         ],
-        'rates': {
-          for (final rate in _rates.entries)
-            rate.key: parseDecimal(rate.value.text)! / 100,
-        },
-        if (_practiced.text.trim().isNotEmpty)
-          'practicedPrice': parseDecimal(_practiced.text),
+        'rates': _ratesBody,
+        'practicedPrice': ?practiced,
       });
       if (mounted) setState(() => _result = result);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = _message(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// O servidor calcula de novo, grava no PostgreSQL e devolve o resultado.
+  Future<void> _save() async {
+    final request = widget.request;
+    if (request == null || _busy || !_validate()) return;
+    setState(() {
+      _busy = true;
+      _saving = true;
+      _error = null;
+      _notice = null;
+      _result = null;
+    });
+    final practiced = _practicedPrice;
+    try {
+      final saved = await widget.api
+          .post('/v1/quote-requests/${request.id}/pricing', {
+            'costs': [
+              for (final cost in _costs)
+                if (cost.material case final material?)
+                  // Do catálogo: só o id e a quantidade; nome, unidade e
+                  // custo o servidor busca por conta própria.
+                  {
+                    'materialId': material.id,
+                    'quantity': parseDecimal(cost.quantity.text),
+                  }
+                else
+                  {
+                    'name': cost.name.text.trim(),
+                    'unit': cost.unit.text.trim(),
+                    'quantity': parseDecimal(cost.quantity.text),
+                    'unitCost': parseDecimal(cost.unitCost.text),
+                  },
+            ],
+            'rates': _ratesBody,
+           'practicedPrice': ?practiced,
+          });
+      if (!mounted) return;
+      setState(() {
+        _result = saved['result'] as Map<String, dynamic>?;
+        _savedAt = DateTime.tryParse(saved['createdAt'] as String? ?? '');
+        _notice =
+            'Precificação salva. Ela continuará aqui quando você reabrir esta solicitação.';
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = _message(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -137,16 +383,157 @@ class _PricingScreenState extends State<PricingScreen> {
   Widget _decimal(
     TextEditingController controller,
     String label, {
-    bool percent = false,
-    bool optional = false,
+    required String? Function(String?) validator,
+    String? suffix,
   }) => TextFormField(
     controller: controller,
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-    decoration: InputDecoration(
-      labelText: label,
-      suffixText: percent ? '%' : null,
+    decoration: InputDecoration(labelText: label, suffixText: suffix),
+    validator: validator,
+  );
+
+  Widget _costCard(_CostFields cost, int index) {
+    final material = cost.material;
+    final quantityField = _decimal(
+      cost.quantity,
+      material == null
+          ? 'Quantidade consumida'
+          : 'Quantidade (${material.unit})',
+      validator: _quantityError,
+    );
+    final Widget costField = cost.manual
+        ? _decimal(
+            cost.unitCost,
+            'Custo por unidade (R\$)',
+            validator: _costError,
+          )
+        : InputDecorator(
+            decoration: InputDecoration(
+              labelText: material == null
+                  ? 'Custo por unidade'
+                  : 'Custo por ${material.unit} (catálogo)',
+            ),
+            child: Text(material == null ? '—' : money(material.unitCost)),
+          );
+    return Card(
+      key: ObjectKey(cost),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text('Insumo ${index + 1}')),
+                IconButton(
+                  tooltip: 'Remover insumo',
+                  onPressed: _costs.length == 1
+                      ? null
+                      : () {
+                          setState(() {
+                            _costs.remove(cost);
+                            _result = null;
+                            _notice = null;
+                          });
+                          cost.dispose();
+                        },
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
+            ),
+            DropdownButtonFormField<String>(
+              initialValue: cost.manual ? _manualOption : material?.id,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Material'),
+              items: <DropdownMenuItem<String>>[
+                for (final item in _materials)
+                  DropdownMenuItem(
+                    value: item.id,
+                    child: Text(item.label, overflow: TextOverflow.ellipsis),
+                  ),
+                const DropdownMenuItem(
+                  value: _manualOption,
+                  child: Text('Outro material (digitar)'),
+                ),
+              ],
+              validator: (value) => value == null ? 'Escolha um material.' : null,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  cost.manual = value == _manualOption;
+                  cost.material = cost.manual
+                      ? null
+                      : _materials.firstWhere((m) => m.id == value);
+                  _result = null;
+                  _notice = null;
+                });
+              },
+            ),
+            if (cost.manual) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: cost.name,
+                maxLength: 120,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do material (ex.: Metalon)',
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe o material.' : null,
+              ),
+              TextFormField(
+                controller: cost.unit,
+                maxLength: 30,
+                decoration: const InputDecoration(
+                  labelText: 'Unidade (ex.: metro, kg)',
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe a unidade.' : null,
+              ),
+            ],
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) => constraints.maxWidth < 480
+                  ? Column(
+                      children: [
+                        quantityField,
+                        const SizedBox(height: 16),
+                        costField,
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: quantityField),
+                        const SizedBox(width: 16),
+                        Expanded(child: costField),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _requestCard(QuoteRequest request) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dados da solicitação',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(request.description),
+          const SizedBox(height: 8),
+          Text('${request.quantity} unidade(s)'),
+          Text('Solicitada em ${dateTime(request.createdAt.toLocal())}'),
+          SelectableText('Referência: ${request.id}'),
+        ],
+      ),
     ),
-    validator: (value) => _number(value, percent: percent, optional: optional),
   );
 
   Widget _statement(String title, Map<String, dynamic> value) {
@@ -164,11 +551,11 @@ class _PricingScreenState extends State<PricingScreen> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const Text('Preço por unidade do produto'),
-            if (widget.quantity > 1)
+            if (_quantity > 1)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'Total para ${widget.quantity} unidades: ${money((value['revenue'] as num) * widget.quantity)}',
+                  'Total para $_quantity unidades: ${money((value['revenue'] as num) * _quantity)}',
                 ),
               ),
             const Divider(height: 32),
@@ -211,10 +598,27 @@ class _PricingScreenState extends State<PricingScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Precificar orçamento')),
-    body: Center(
+  Widget _loadFailure() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_loadError!, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _retry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _content() {
+    final request = widget.request;
+    return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 900),
         child: Form(
@@ -226,17 +630,29 @@ class _PricingScreenState extends State<PricingScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  widget.product ?? 'Simulação de preço',
+                  _product ?? 'Simulação de preço',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
+                if (request != null) ...[
+                  _requestCard(request),
+                  const SizedBox(height: 8),
+                ],
                 const Text(
-                  'Informe os materiais necessários para uma unidade do produto. Use a mesma unidade de medida na quantidade e no custo unitário.',
+                  'Escolha os materiais necessários para uma unidade do produto e informe a quantidade consumida de cada um.',
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Simulação: o cálculo não salva nem envia uma proposta ao comprador.',
+                Text(
+                  request == null
+                      ? 'Simulação avulsa: nada é salvo.'
+                      : 'Calcular é só uma simulação. Use Salvar para guardar a precificação desta solicitação; isso não envia proposta ao comprador.',
                 ),
+                if (_savedAt != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Última precificação salva em ${dateTime(_savedAt!.toLocal())}.',
+                  ),
+                ],
                 const SizedBox(height: 24),
                 AbsorbPointer(
                   absorbing: _busy,
@@ -247,89 +663,22 @@ class _PricingScreenState extends State<PricingScreen> {
                         '1. Materiais e custos',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      for (final cost in _costs)
-                        Card(
-                          key: ObjectKey(cost),
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Insumo ${_costs.indexOf(cost) + 1}',
-                                      ),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Remover insumo',
-                                      onPressed: _costs.length == 1
-                                          ? null
-                                          : () {
-                                              setState(() {
-                                                _costs.remove(cost);
-                                                _result = null;
-                                              });
-                                              cost.dispose();
-                                            },
-                                      icon: const Icon(Icons.delete_outline),
-                                    ),
-                                  ],
-                                ),
-                                TextFormField(
-                                  controller: cost.name,
-                                  maxLength: 120,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Material e unidade (ex.: Metalon / metro)',
-                                  ),
-                                  validator: (v) =>
-                                      v == null || v.trim().isEmpty
-                                      ? 'Informe o material.'
-                                      : null,
-                                ),
-                                const SizedBox(height: 12),
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final fields = [
-                                      _decimal(
-                                        cost.quantity,
-                                        'Quantidade consumida',
-                                      ),
-                                      _decimal(
-                                        cost.unitCost,
-                                        'Custo por unidade (R\$)',
-                                      ),
-                                    ];
-                                    return constraints.maxWidth < 480
-                                        ? Column(
-                                            children: [
-                                              fields[0],
-                                              const SizedBox(height: 16),
-                                              fields[1],
-                                            ],
-                                          )
-                                        : Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(child: fields[0]),
-                                              const SizedBox(width: 16),
-                                              Expanded(child: fields[1]),
-                                            ],
-                                          );
-                                  },
-                                ),
-                              ],
-                            ),
+                      if (_materials.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                            'O catálogo ainda não tem materiais. Use "Outro material (digitar)".',
                           ),
                         ),
+                      for (var i = 0; i < _costs.length; i++)
+                        _costCard(_costs[i], i),
                       OutlinedButton.icon(
                         onPressed: _costs.length >= 100
                             ? null
                             : () => setState(() {
                                 _costs.add(_CostFields());
                                 _result = null;
+                                _notice = null;
                               }),
                         icon: const Icon(Icons.add),
                         label: const Text('Adicionar material'),
@@ -358,7 +707,8 @@ class _PricingScreenState extends State<PricingScreen> {
                                 child: _decimal(
                                   _rates[entry.key]!,
                                   entry.value,
-                                  percent: true,
+                                  validator: _percentError,
+                                  suffix: '%',
                                 ),
                               ),
                           ],
@@ -373,7 +723,7 @@ class _PricingScreenState extends State<PricingScreen> {
                       _decimal(
                         _practiced,
                         'Preço negociado por produto (R\$)',
-                        optional: true,
+                        validator: _optionalMoneyError,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -382,18 +732,52 @@ class _PricingScreenState extends State<PricingScreen> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(_error!),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ),
-                FilledButton.icon(
-                  onPressed: _busy ? null : _calculate,
-                  icon: _busy
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.calculate_outlined),
-                  label: Text(_busy ? 'Calculando…' : 'Calcular preço'),
+                if (_notice != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(_notice!),
+                  ),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _calculate,
+                      icon: _busy && !_saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.calculate_outlined),
+                      label: Text(
+                        _busy && !_saving ? 'Calculando…' : 'Calcular preço',
+                      ),
+                    ),
+                    if (request != null)
+                      FilledButton.tonalIcon(
+                        onPressed: _busy ? null : _save,
+                        icon: _busy && _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.save_outlined),
+                        label: Text(
+                          _busy && _saving ? 'Salvando…' : 'Salvar precificação',
+                        ),
+                      ),
+                  ],
                 ),
                 if (_result != null) ...[
                   const SizedBox(height: 24),
@@ -413,6 +797,16 @@ class _PricingScreenState extends State<PricingScreen> {
           ),
         ),
       ),
-    ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Precificar orçamento')),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _loadError != null
+        ? _loadFailure()
+        : _content(),
   );
 }

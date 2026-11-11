@@ -262,11 +262,7 @@ class QuoteDetailScreen extends StatelessWidget {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (_) => PricingScreen(
-                      api: api,
-                      product: item.product,
-                      quantity: item.quantity,
-                    ),
+                    builder: (_) => PricingScreen(api: api, request: item),
                   ),
                 ),
                 icon: const Icon(Icons.calculate_outlined),

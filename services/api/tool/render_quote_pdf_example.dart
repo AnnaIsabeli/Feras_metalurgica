@@ -7,6 +7,8 @@ QuoteDocument exampleQuote({
   bool delivery = true,
   bool empty = false,
   bool unsupported = false,
+  int quantity = 1,
+  int unitPriceCents = 387045,
 }) => QuoteDocument(
   requestId: '12345678-1234-4234-8234-123456789012',
   pricingId: '87654321-4321-4321-8321-210987654321',
@@ -14,13 +16,13 @@ QuoteDocument exampleQuote({
   customerName: 'Marina de Souza (exemplo)',
   customerEmail: 'cliente.pdf@example.invalid',
   product: unsupported ? 'Teste \u{10ffff}' : 'Portão metálico sob medida',
-  quantity: 1,
+  quantity: quantity,
   description: stress
       ? ('Descrição com acentuação, fabricação e instalação. ' * 70)
             .padRight(4000, 'X')
             .substring(0, 4000)
       : 'Fabricação e instalação de portão metálico de correr, com estrutura em metalon, fechamento em chapa galvanizada e acabamento em pintura esmalte PU. Medidas: 3,00 m de largura por 2,20 m de altura.',
-  totalPriceCents: 387045,
+  unitPriceCents: unitPriceCents,
   deliveryLeadTime: delivery ? '20 dias úteis após a aprovação' : null,
   items: empty
       ? []
@@ -55,6 +57,7 @@ Future<void> main(List<String> args) async {
       'orcamento-exemplo': exampleQuote(),
       'orcamento-longo': exampleQuote(stress: true),
       'orcamento-sem-prazo': exampleQuote(delivery: false),
+      'orcamento-duas-unidades': exampleQuote(quantity: 2),
     }.entries) {
       await File(
         '${args[1]}/${entry.key}.pdf',

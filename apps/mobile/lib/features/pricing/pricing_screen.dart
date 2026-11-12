@@ -2,6 +2,7 @@ import 'package:fera_contracts/fera_contracts.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import 'quote_pdf_actions.dart';
 
 const pricingRates = <String, String>{
   'simplesNacionalRate': 'Simples Nacional',
@@ -82,7 +83,13 @@ class _CostFields {
 }
 
 class PricingScreen extends StatefulWidget {
-  const PricingScreen({super.key, required this.api, this.request});
+  const PricingScreen({
+    super.key,
+    required this.api,
+    this.request,
+    this.pdfActions = const SystemQuotePdfActions(),
+  });
+  final QuotePdfActions pdfActions;
   final ApiClient api;
 
   /// Solicitação que está sendo precificada. Nula na simulação avulsa
@@ -99,6 +106,10 @@ class _PricingScreenState extends State<PricingScreen> {
     for (final key in pricingRates.keys) key: TextEditingController(text: '0'),
   };
   final _practiced = TextEditingController();
+  final _deliveryLeadTime = TextEditingController();
+  String? _savedPricingId;
+  bool _dirty = false;
+  bool _exportingPdf = false;
   List<CatalogMaterial> _materials = const [];
   Map<String, dynamic>? _result;
   DateTime? _savedAt;
@@ -127,6 +138,7 @@ class _PricingScreenState extends State<PricingScreen> {
       rate.dispose();
     }
     _practiced.dispose();
+    _deliveryLeadTime.dispose();
     super.dispose();
   }
 
@@ -193,6 +205,10 @@ class _PricingScreenState extends State<PricingScreen> {
           'Monte a composição novamente e salve.';
       return;
     }
+    _savedPricingId = saved['id'] as String?;
+    _dirty = false;
+    final delivery = input['deliveryLeadTime'];
+    _deliveryLeadTime.text = delivery is String ? delivery : '';
     final rows = <_CostFields>[];
     for (final item in (input['costs'] as List).cast<Map<String, dynamic>>()) {
       final row = _CostFields();
@@ -225,12 +241,41 @@ class _PricingScreenState extends State<PricingScreen> {
   }
 
   void _changed() {
-    if (_result != null || _error != null || _notice != null) {
+    if (!_dirty || _result != null || _error != null || _notice != null) {
       setState(() {
+        _dirty = true;
         _result = null;
         _error = null;
         _notice = null;
       });
+    }
+  }
+
+  Future<void> _exportPdf({required bool download}) async {
+    final request = widget.request;
+    final revision = _savedPricingId;
+    if (request == null || revision == null || _dirty || _busy || _exportingPdf)
+      return;
+    setState(() {
+      _exportingPdf = true;
+      _error = null;
+      _notice = null;
+    });
+    try {
+      final file = await widget.api.getPdf(
+        '/v1/quote-requests/${request.id}/pdf'
+        '?pricingId=${Uri.encodeQueryComponent(revision)}${download ? '&download=1' : ''}',
+      );
+      if (!mounted) return;
+      final completed = download
+          ? await widget.pdfActions.download(file)
+          : await widget.pdfActions.preview(file);
+      if (mounted)
+        setState(() => _notice = completed ? 'PDF pronto.' : 'Ação cancelada.');
+    } catch (error) {
+      if (mounted) setState(() => _error = _message(error));
+    } finally {
+      if (mounted) setState(() => _exportingPdf = false);
     }
   }
 
@@ -300,7 +345,7 @@ class _PricingScreenState extends State<PricingScreen> {
 
   /// Simulação: o servidor calcula, nada é salvo.
   Future<void> _calculate() async {
-    if (_busy || !_validate()) return;
+    if (_busy || _exportingPdf || !_validate()) return;
     setState(() {
       _busy = true;
       _saving = false;
@@ -334,7 +379,7 @@ class _PricingScreenState extends State<PricingScreen> {
   /// O servidor calcula de novo, grava no PostgreSQL e devolve o resultado.
   Future<void> _save() async {
     final request = widget.request;
-    if (request == null || _busy || !_validate()) return;
+    if (request == null || _busy || _exportingPdf || !_validate()) return;
     setState(() {
       _busy = true;
       _saving = true;
@@ -344,31 +389,38 @@ class _PricingScreenState extends State<PricingScreen> {
     });
     final practiced = _practicedPrice;
     try {
-      final saved = await widget.api
-          .post('/v1/quote-requests/${request.id}/pricing', {
-            'costs': [
-              for (final cost in _costs)
-                if (cost.material case final material?)
-                  // Do catálogo: só o id e a quantidade; nome, unidade e
-                  // custo o servidor busca por conta própria.
-                  {
-                    'materialId': material.id,
-                    'quantity': parseDecimal(cost.quantity.text),
-                  }
-                else
-                  {
-                    'name': cost.name.text.trim(),
-                    'unit': cost.unit.text.trim(),
-                    'quantity': parseDecimal(cost.quantity.text),
-                    'unitCost': parseDecimal(cost.unitCost.text),
-                  },
-            ],
-            'rates': _ratesBody,
-           'practicedPrice': ?practiced,
-          });
+      final saved = await widget.api.post(
+        '/v1/quote-requests/${request.id}/pricing',
+        {
+          'costs': [
+            for (final cost in _costs)
+              if (cost.material case final material?)
+                // Do catálogo: só o id e a quantidade; nome, unidade e
+                // custo o servidor busca por conta própria.
+                {
+                  'materialId': material.id,
+                  'quantity': parseDecimal(cost.quantity.text),
+                }
+              else
+                {
+                  'name': cost.name.text.trim(),
+                  'unit': cost.unit.text.trim(),
+                  'quantity': parseDecimal(cost.quantity.text),
+                  'unitCost': parseDecimal(cost.unitCost.text),
+                },
+          ],
+          'rates': _ratesBody,
+          'practicedPrice': ?practiced,
+          'deliveryLeadTime': _deliveryLeadTime.text.trim().isEmpty
+              ? null
+              : _deliveryLeadTime.text.trim(),
+        },
+      );
       if (!mounted) return;
       setState(() {
         _result = saved['result'] as Map<String, dynamic>?;
+        _savedPricingId = saved['id'] as String?;
+        _dirty = false;
         _savedAt = DateTime.tryParse(saved['createdAt'] as String? ?? '');
         _notice =
             'Precificação salva. Ela continuará aqui quando você reabrir esta solicitação.';
@@ -432,6 +484,7 @@ class _PricingScreenState extends State<PricingScreen> {
                       : () {
                           setState(() {
                             _costs.remove(cost);
+                            _dirty = true;
                             _result = null;
                             _notice = null;
                           });
@@ -456,7 +509,8 @@ class _PricingScreenState extends State<PricingScreen> {
                   child: Text('Outro material (digitar)'),
                 ),
               ],
-              validator: (value) => value == null ? 'Escolha um material.' : null,
+              validator: (value) =>
+                  value == null ? 'Escolha um material.' : null,
               onChanged: (value) {
                 if (value == null) return;
                 setState(() {
@@ -464,6 +518,7 @@ class _PricingScreenState extends State<PricingScreen> {
                   cost.material = cost.manual
                       ? null
                       : _materials.firstWhere((m) => m.id == value);
+                  _dirty = true;
                   _result = null;
                   _notice = null;
                 });
@@ -477,8 +532,9 @@ class _PricingScreenState extends State<PricingScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Nome do material (ex.: Metalon)',
                 ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Informe o material.' : null,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Informe o material.'
+                    : null,
               ),
               TextFormField(
                 controller: cost.unit,
@@ -655,7 +711,7 @@ class _PricingScreenState extends State<PricingScreen> {
                 ],
                 const SizedBox(height: 24),
                 AbsorbPointer(
-                  absorbing: _busy,
+                  absorbing: _busy || _exportingPdf,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -677,6 +733,7 @@ class _PricingScreenState extends State<PricingScreen> {
                             ? null
                             : () => setState(() {
                                 _costs.add(_CostFields());
+                                _dirty = true;
                                 _result = null;
                                 _notice = null;
                               }),
@@ -725,6 +782,25 @@ class _PricingScreenState extends State<PricingScreen> {
                         'Preço negociado por produto (R\$)',
                         validator: _optionalMoneyError,
                       ),
+                      if (request != null) ...[
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _deliveryLeadTime,
+                          maxLength: 240,
+                          decoration: const InputDecoration(
+                            labelText: 'Prazo de entrega (opcional)',
+                            helperText:
+                                'Preencha o prazo combinado para este orçamento.',
+                          ),
+                          validator: (text) =>
+                              (text ?? '').length > 240 ||
+                                  RegExp(
+                                    r'[\x00-\x1f\x7f]',
+                                  ).hasMatch(text ?? '')
+                              ? 'Use até 240 caracteres, em uma linha.'
+                              : null,
+                        ),
+                      ],
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -749,7 +825,7 @@ class _PricingScreenState extends State<PricingScreen> {
                   runSpacing: 12,
                   children: [
                     FilledButton.icon(
-                      onPressed: _busy ? null : _calculate,
+                      onPressed: _busy || _exportingPdf ? null : _calculate,
                       icon: _busy && !_saving
                           ? const SizedBox(
                               width: 20,
@@ -763,7 +839,7 @@ class _PricingScreenState extends State<PricingScreen> {
                     ),
                     if (request != null)
                       FilledButton.tonalIcon(
-                        onPressed: _busy ? null : _save,
+                        onPressed: _busy || _exportingPdf ? null : _save,
                         icon: _busy && _saving
                             ? const SizedBox(
                                 width: 20,
@@ -774,11 +850,58 @@ class _PricingScreenState extends State<PricingScreen> {
                               )
                             : const Icon(Icons.save_outlined),
                         label: Text(
-                          _busy && _saving ? 'Salvando…' : 'Salvar precificação',
+                          _busy && _saving
+                              ? 'Salvando…'
+                              : 'Salvar precificação',
                         ),
                       ),
                   ],
                 ),
+                if (request != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _savedPricingId == null
+                        ? 'Salve a precificação para liberar o PDF.'
+                        : _dirty
+                        ? 'Salve as alterações para atualizar e liberar o PDF.'
+                        : 'PDF da precificação salva. Custos internos e margens não aparecem no documento.',
+                  ),
+                  if (_exportingPdf)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: LinearProgressIndicator(),
+                    ),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        key: const Key('previewQuotePdf'),
+                        onPressed:
+                            _savedPricingId == null ||
+                                _dirty ||
+                                _busy ||
+                                _exportingPdf
+                            ? null
+                            : () => _exportPdf(download: false),
+                        icon: const Icon(Icons.picture_as_pdf_outlined),
+                        label: const Text('Visualizar / imprimir PDF'),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('downloadQuotePdf'),
+                        onPressed:
+                            _savedPricingId == null ||
+                                _dirty ||
+                                _busy ||
+                                _exportingPdf
+                            ? null
+                            : () => _exportPdf(download: true),
+                        icon: const Icon(Icons.download_outlined),
+                        label: const Text('Baixar / compartilhar PDF'),
+                      ),
+                    ],
+                  ),
+                ],
                 if (_result != null) ...[
                   const SizedBox(height: 24),
                   _statement(

@@ -226,7 +226,11 @@ class QuotePdfRenderer {
             ),
           ),
           pw.NewPage(freeSpace: 90),
-          label('ITENS DO ORÇAMENTO'),
+          label(
+            quote.quantity > 1
+                ? 'ITENS POR UNIDADE DO PRODUTO'
+                : 'ITENS DO ORÇAMENTO',
+          ),
           pw.TableHelper.fromTextArray(
             context: context,
             headers: ['Descrição', 'Quantidade', 'Unidade'],
@@ -268,6 +272,13 @@ class QuotePdfRenderer {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.SizedBox(height: 18),
+                if (quote.quantity > 1)
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 8),
+                    child: pw.Text(
+                      'Preço por unidade: ${money(quote.unitPriceCents)}',
+                    ),
+                  ),
                 pw.Container(
                   padding: const pw.EdgeInsets.all(16),
                   decoration: pw.BoxDecoration(color: light),

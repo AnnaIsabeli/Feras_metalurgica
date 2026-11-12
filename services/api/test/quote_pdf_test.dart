@@ -157,4 +157,17 @@ void main() {
       'unsupported_pdf_character',
     );
   });
+  test(
+    'multiplies saved unit cents by requested product quantity and rejects overflow',
+    () async {
+      final document = exampleQuote(quantity: 2);
+      expect(document.unitPriceCents, 387045);
+      expect(document.totalPriceCents, 774090);
+      documents.document = exampleQuote(
+        quantity: 10000,
+        unitPriceCents: 9007199254740991,
+      );
+      expect((await get()).statusCode, 422);
+    },
+  );
 }

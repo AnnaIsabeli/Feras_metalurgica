@@ -48,6 +48,15 @@ class QuotePdfService {
         'Salve uma precificação desta solicitação antes de gerar o PDF.',
       );
     }
+    if (document.quantity < 1 ||
+        document.unitPriceCents < 0 ||
+        document.unitPriceCents > 9007199254740991 ~/ document.quantity) {
+      throw const ApiError(
+        422,
+        'quote_total_limit',
+        'O valor total excede o limite de exportação do PDF.',
+      );
+    }
     if (document.items.isEmpty) {
       throw const ApiError(
         409,

@@ -44,7 +44,7 @@ class PostgresQuoteDocumentRepository implements QuoteDocumentRepository {
       product: data['product'] as String,
       description: data['description'] as String,
       quantity: data['quantity'] as int,
-      totalPriceCents: data['total_price_cents'] as int,
+      unitPriceCents: data['total_price_cents'] as int,
       deliveryLeadTime: data['delivery_lead_time'] as String?,
       items: items
           .map(

@@ -19,8 +19,11 @@ revisão e os snapshots dos itens. O catálogo atual não é consultado.
 A interface deve buscar os bytes com Authorization e depois abrir/baixar o PDF.
 Não coloque o token em URLs. Na web, use Blob/application/pdf após o fetch
 autenticado; no aplicativo, use o mecanismo de visualização/compartilhamento
-adotado pelo grupo. A ligação do botão será feita junto da integração S3-06,
-preservando o trabalho em andamento da interface.
+adotado pelo grupo. A tela integrada da S3-06 disponibiliza Visualizar / imprimir PDF e Baixar /
+compartilhar PDF. Os botões usam a revisão salva e ficam bloqueados enquanto
+houver alterações ainda não salvas. O prazo opcional pode ser preenchido na tela.
+A ação de visualização usa o diálogo nativo de impressão; a de download usa o
+download do navegador ou o compartilhamento do sistema, sem recalcular o PDF.
 
 Exemplo pelo terminal (ambiente demonstrativo):
 
@@ -34,9 +37,12 @@ curl --fail \
 ## Conteúdo
 
 Cliente e e-mail, solicitação, descrição, quantidade solicitada, nomes/unidades/
-quantidades dos itens e valor total em reais. O preço vem de
-`quote_pricings.total_price_cents`, que já representa o preço praticado ou
-sugerido escolhido ao salvar. Não aparecem custos unitários, taxas, CMV, markup,
+quantidades dos itens e valor total em reais. O preço por unidade vem de `quote_pricings.total_price_cents` (nome legado da
+coluna), que representa o preço praticado ou sugerido para uma unidade do
+produto, conforme a tela de precificação. O valor total do documento é esse
+valor unitário em centavos multiplicado pela quantidade de produtos solicitada.
+Para mais de uma unidade, o PDF distingue os itens por unidade, o preço unitário
+e o total do pedido. Essa multiplicação não refaz impostos, despesas ou margens. Não aparecem custos unitários, taxas, CMV, markup,
 margens ou resultado financeiro. A geração não altera status nem envia proposta.
 
 O PDF identifica a revisão da precificação. Itens e preços são os snapshots da

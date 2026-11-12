@@ -10,6 +10,7 @@ dependencies:
   fera_contracts:
     path: ../../packages/contracts
   http: ^1.4.0
+  printing: 5.14.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

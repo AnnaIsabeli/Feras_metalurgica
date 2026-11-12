@@ -47,3 +47,9 @@ for number in range(1, 101):
     assert re.search(rf'Item\s+{number}\s+-', long), number
 assert long.count('Descrição com acentuação,') == 70
 print('PASS: all 100 long items and full description survived pagination; optional delivery is respected')
+
+two = PdfReader(folder / 'orcamento-duas-unidades.pdf')
+text = re.sub(r'\s+', '', ' '.join(page.extract_text() or '' for page in two.pages))
+for required in ('Quantidadesolicitada:2unidade(s)', 'Preçoporunidade:R$3.870,45', 'VALORTOTALR$7.740,90', 'ITENSPORUNIDADEDOPRODUTO'):
+    assert required in text, required
+print('PASS: requested quantity multiplies saved unit cents; document distinguishes unit price and order total')

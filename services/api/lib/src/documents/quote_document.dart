@@ -20,7 +20,7 @@ class QuoteDocument {
     required this.product,
     required this.description,
     required this.quantity,
-    required this.totalPriceCents,
+    required this.unitPriceCents,
     required this.items,
     this.deliveryLeadTime,
   });
@@ -32,7 +32,8 @@ class QuoteDocument {
   final String product;
   final String description;
   final int quantity;
-  final int totalPriceCents;
+  final int unitPriceCents;
+  int get totalPriceCents => unitPriceCents * quantity;
   final List<QuoteDocumentItem> items;
   final String? deliveryLeadTime;
 }

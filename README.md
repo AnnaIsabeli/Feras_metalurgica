@@ -1,108 +1,227 @@
-# Fera Metalúrgica — ORCEX
+# Sistema de Estacionamento
 
-Aplicativo do Projeto Integrador para solicitações, precificação e acompanhamento de orçamentos.
+Aplicação web completa para gerenciamento de estacionamento desenvolvida com:
 
-**Entrega atual: esqueleto da arquitetura com uma primeira integração de solicitações.**
-Login Google, precificação, propostas e pedidos completos ainda estão no roadmap.
-O protótipo Figma não foi alterado nesta entrega.
+- **Backend**: Java 8 puro (`HttpServer` nativo + JDBC + Gson)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Banco de dados**: PostgreSQL
+- **Infraestrutura**: Docker Compose + Nginx
 
-## Estrutura
+---
 
-```text
-apps/mobile/          Flutter: telas → view models → repositórios → HTTP
-services/api/         Dart/Shelf: HTTP → serviços → repositórios → PostgreSQL
-packages/contracts/   Modelos JSON compartilhados, sem segredos ou regras de preço
-database/migrations/  Evolução versionada do banco
-database/seeds/       Usuários de demonstração local
-docs/                 Arquitetura, API, roadmap e validação
-scripts/              Preparação da demonstração
-.github/workflows/    Análise e testes automáticos
+## Pré-requisitos
+
+- Docker >= 20.x
+- Docker Compose >= 2.x
+
+---
+
+## Executar o projeto
+
+```bash
+docker compose up --build -d
 ```
 
-O Flutter **não conecta diretamente ao banco**. A API valida identidade, permissões e dados.
-Usamos um backend único organizado por módulos, sem microsserviços nesta fase.
+A primeira execução faz o download das imagens e compila o backend com Maven (~3 min).
 
-## Implementado
+| Serviço     | Endereço                     |
+|-------------|------------------------------|
+| Frontend    | http://localhost:3000        |
+| Backend API | http://localhost:8080        |
+| PostgreSQL  | localhost:5432               |
 
-- Tema e navegação Flutter por perfil; formulário, carregamento, erro, lista vazia e nova tentativa.
-- Comprador cria/lista suas solicitações; vendedor aprovado consulta solicitações.
-- API de saúde, disponibilidade do banco, identidade e solicitações.
-- PostgreSQL com consultas parametrizadas, chaves estrangeiras e restrições.
-- Identidade substituível por Google; modo padrão nega acesso privado.
-- Testes de autorização, validação, isolamento por comprador e estado da interface.
+---
 
-## Demonstração local
+## Parar os containers
 
-Requisitos: Flutter stable com Dart >=3.8, Docker Desktop com engine Linux rodando, Python 3, Git e Chrome.
-
-1. Copie `.env.example` para `.env`. Configure uma senha local alfanumérica (caracteres especiais
-   na URL do PostgreSQL precisam ser codificados).
-2. Na raiz do repositório, execute no PowerShell:
-
-```powershell
-./scripts/demo.ps1
-```
-
-Isso inicia PostgreSQL/API e insere usuários demonstrativos. Confira `http://localhost:8080/ready`.
-O banco não publica porta para fora da rede Docker.
-
-3. Inicie o aplicativo:
-
-```powershell
-cd apps/mobile
-flutter pub get
-flutter run -d chrome --web-port 5000 --dart-define=ENABLE_DEMO=true
-```
-
-Entre como comprador, crie uma solicitação, saia da demonstração e entre como vendedor para
-consultá-la. Os dados permanecem no PostgreSQL.
-
-O modo local aceita `demo-buyer` e `demo-seller`: **não são autenticação de produção**.
-A API só aceita esses tokens com `APP_ENV=development` e `DEV_AUTH_ENABLED=true`.
-A interface exige `ENABLE_DEMO=true`. Sem essas opções o acesso demonstrativo fica desativado.
-Não exponha esse modo na internet.
-
-### Android
-
-O host Android deve ser gerado pelo SDK oficial antes da primeira execução:
-
-```powershell
-cd apps/mobile
-flutter create --platforms=android --project-name fera_mobile --org br.edu.fera .
-flutter run --dart-define=ENABLE_DEMO=true --dart-define=API_BASE_URL=http://10.0.2.2:8080
-```
-
-Android ainda precisa de validação no emulador, inclusive permissão de internet e política HTTP
-de desenvolvimento. Produção exige HTTPS. O primeiro alvo de demonstração é web.
-
-### Parar preservando os dados
-
-```powershell
+```bash
 docker compose down
 ```
 
-As migrations são aplicadas por `python3 scripts/migrate.py` antes de iniciar a API.
-O processo preserva os dados e ignora arquivos já aplicados. Veja [Migrations](docs/MIGRATIONS.md).
-Não apague um volume com dados reais para atualizar o esquema.
+Para remover os dados do banco junto:
 
-## Testar
-
-```powershell
-cd services/api
-dart pub get
-dart analyze --fatal-infos
-dart test
-cd ../../apps/mobile
-flutter pub get
-flutter analyze
-flutter test
-flutter build web
+```bash
+docker compose down -v
 ```
 
-O teste PostgreSQL exige `TEST_DATABASE_URL` apontando para base de teste com migração e seed.
-Sem essa variável ele é ignorado, não aprovado. O GitHub Actions prepara essa base.
+---
 
-- [Arquitetura](docs/ARCHITECTURE.md)
-- [API implementada](docs/API.md)
-- [Regras e motor de precificação — Sprint 2](docs/PRICING.md)
-- [Validação e limitações](docs/VALIDATION.md)
+## Estrutura
+
+```
+estacionamento/
+├── backend/          Java 8 — API REST
+│   ├── src/
+│   ├── pom.xml
+│   └── Dockerfile
+├── frontend/         HTML + CSS + JS — Nginx
+│   ├── index.html
+│   ├── css/
+│   ├── js/
+│   ├── nginx.conf
+│   └── Dockerfile
+├── database/
+│   └── init.sql      Schema + dados iniciais
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## Execução local (sem Docker)
+
+### Pré-requisitos
+
+| Ferramenta | Versão mínima | Download |
+|------------|---------------|---------|
+| JDK | 8 | https://adoptium.net |
+| Maven | 3.6 | https://maven.apache.org/download.cgi |
+| PostgreSQL | 13+ | https://www.postgresql.org/download |
+| Nginx | qualquer | https://nginx.org/en/download.html (Mac: `brew install nginx`) |
+
+---
+
+### 1. Banco de dados
+
+**Mac (Homebrew)**
+```bash
+brew install postgresql@15
+brew services start postgresql@15
+createdb estacionamento
+psql estacionamento < database/init.sql
+```
+
+**Windows**
+```
+# Após instalar o PostgreSQL, abra o psql como postgres:
+psql -U postgres
+CREATE DATABASE estacionamento;
+\q
+psql -U postgres -d estacionamento -f database\init.sql
+```
+
+---
+
+### 2. Backend
+
+Dentro da pasta `backend/`:
+
+**Mac**
+```bash
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=estacionamento
+export DB_USER=postgres
+export DB_PASSWORD=postgres
+
+mvn package -DskipTests
+java -jar target/estacionamento.jar
+```
+
+**Windows (cmd)**
+```cmd
+set DB_HOST=localhost
+set DB_PORT=5432
+set DB_NAME=estacionamento
+set DB_USER=postgres
+set DB_PASSWORD=postgres
+
+mvn package -DskipTests
+java -jar target\estacionamento.jar
+```
+
+**Windows (PowerShell)**
+```powershell
+$env:DB_HOST     = "localhost"
+$env:DB_PORT     = "5432"
+$env:DB_NAME     = "estacionamento"
+$env:DB_USER     = "postgres"
+$env:DB_PASSWORD = "postgres"
+
+mvn package -DskipTests
+java -jar target\estacionamento.jar
+```
+
+A API estará disponível em `http://localhost:8080`.
+
+---
+
+### 3. Frontend
+
+O frontend usa URLs relativas (`/api/...`), então precisa de um servidor que faça proxy das chamadas para o backend. Use o Nginx com o arquivo de configuração já incluso.
+
+**Mac**
+```bash
+# Edite nginx.conf e troque "backend:8080" por "127.0.0.1:8080"
+sed -i '' 's/backend:8080/127.0.0.1:8080/' frontend/nginx.conf
+
+nginx -p "$PWD/frontend" -c "$PWD/frontend/nginx.conf"
+```
+
+**Windows**
+
+Edite `frontend\nginx.conf` e troque `backend:8080` por `127.0.0.1:8080`, depois:
+```cmd
+cd frontend
+nginx -p . -c nginx.conf
+```
+
+O frontend estará disponível em `http://localhost:3000`.
+
+Para parar o Nginx:
+```bash
+# Mac
+nginx -s stop
+
+# Windows
+nginx -s stop
+```
+
+> **Sem Nginx:** abra `frontend/index.html` no navegador e edite a primeira linha de
+> `frontend/js/api.js`, adicionando `const BASE = 'http://localhost:8080'` e
+> prefixando todas as chamadas com `BASE`. O backend já aceita requisições
+> cross-origin (`Access-Control-Allow-Origin: *`).
+
+---
+
+## API REST
+
+| Método | Endpoint                        | Descrição               |
+|--------|---------------------------------|-------------------------|
+| GET    | /api/dashboard                  | Indicadores gerais      |
+| GET    | /api/clientes                   | Listar clientes         |
+| GET    | /api/clientes/{id}              | Buscar cliente          |
+| POST   | /api/clientes                   | Cadastrar cliente       |
+| PUT    | /api/clientes/{id}              | Atualizar cliente       |
+| DELETE | /api/clientes/{id}              | Excluir cliente         |
+| GET    | /api/veiculos                   | Listar veículos         |
+| POST   | /api/veiculos                   | Cadastrar veículo       |
+| PUT    | /api/veiculos/{id}              | Atualizar veículo       |
+| DELETE | /api/veiculos/{id}              | Excluir veículo         |
+| GET    | /api/vagas                      | Listar vagas            |
+| GET    | /api/vagas?status=LIVRE         | Listar vagas livres     |
+| POST   | /api/vagas                      | Cadastrar vaga          |
+| PUT    | /api/vagas/{id}                 | Atualizar vaga          |
+| DELETE | /api/vagas/{id}                 | Excluir vaga            |
+| POST   | /api/permanencias/entrada       | Registrar entrada       |
+| PUT    | /api/permanencias/{id}/saida    | Registrar saída         |
+| GET    | /api/permanencias               | Listar permanências     |
+| GET    | /api/permanencias?status=ABERTO | Listar abertas          |
+
+---
+
+## Regras de negócio
+
+- Tarifa: **R$ 5,00/hora** — mínimo 1 hora, frações arredondadas para cima
+- Entrada bloqueada se o veículo já tiver uma permanência aberta
+- Entrada bloqueada se a vaga estiver ocupada
+- Transações JDBC garantem integridade nas operações de entrada/saída
+- `SELECT FOR UPDATE` evita condições de corrida em requisições simultâneas
+
+---
+
+## Logs do backend
+
+```bash
+docker compose logs -f backend
+```

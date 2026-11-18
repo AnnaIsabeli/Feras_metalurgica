@@ -37,24 +37,27 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
       if (!mounted) return;
       subscription = GoogleSignIn.instance.authenticationEvents.listen(
         (event) {
-          if (event is GoogleSignInAuthenticationEventSignIn)
+          if (event is GoogleSignInAuthenticationEventSignIn) {
             unawaited(enter(event.user));
+          }
         },
         onError: (Object _) {
-          if (mounted)
+          if (mounted) {
             setState(() {
               error = 'Não foi possível entrar com Google. Tente novamente.';
               busy = false;
             });
+          }
         },
       );
       setState(() => ready = true);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => error =
               'Não foi possível carregar o login. Atualize a página e tente novamente.',
         );
+      }
     }
   }
 
@@ -68,10 +71,11 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
     Timer? expiry;
     try {
       final token = user.authentication.idToken;
-      if (token == null)
+      if (token == null) {
         throw const ApiException(
           'O Google não devolveu uma identificação válida.',
         );
+      }
       api = ApiClient(
         baseUrl: Uri.base.resolve('/api').toString(),
         token: token,
@@ -90,8 +94,9 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
             (claims['exp'] as int) * 1000,
           ).difference(DateTime.now()) -
           const Duration(seconds: 30);
-      if (remaining.isNegative)
+      if (remaining.isNegative) {
         throw const ApiException('Sessão expirada. Entre novamente.');
+      }
       expiry = Timer(remaining, () {
         if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
       });
@@ -100,12 +105,13 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
         me['role'] == 'seller' && me['sellerApproved'] == true,
       );
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => error = e is ApiException
               ? e.message
               : 'Não foi possível concluir o acesso. Tente novamente.',
         );
+      }
     } finally {
       expiry?.cancel();
       api?.close();

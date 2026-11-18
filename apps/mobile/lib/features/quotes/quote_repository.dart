@@ -36,8 +36,8 @@ class ApiQuoteRepository implements QuoteRepository {
       'product': product,
       'description': description,
       'quantity': quantity,
-      if (customerName != null) 'customerName': customerName,
-      if (customerContact != null) 'customerContact': customerContact,
+      'customerName': ?customerName,
+      'customerContact': ?customerContact,
     });
   }
 }

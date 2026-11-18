@@ -6,6 +6,7 @@ WORKDIR /app/services/api
 RUN dart pub get && dart compile exe bin/server.dart -o /app/server
 FROM scratch
 COPY --from=build /runtime/ /
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /app/server /app/server
 USER 65534:65534
 EXPOSE 8080

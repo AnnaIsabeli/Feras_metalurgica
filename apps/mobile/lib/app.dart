@@ -1,3 +1,4 @@
+import 'features/auth/google_login_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
@@ -40,45 +41,55 @@ class AccessScreen extends StatelessWidget {
   const AccessScreen({super.key});
   static const _demo = bool.fromEnvironment('ENABLE_DEMO', defaultValue: false);
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Fera Metalúrgica')),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Bem-vindo ao ORCEX',
-                style: Theme.of(context).textTheme.headlineSmall,
+  Widget build(BuildContext context) => !_demo
+      ? GoogleLoginScreen(
+          onAuthenticated: (token, seller) async {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => AppShell(seller: seller, token: token),
               ),
-              const SizedBox(height: 16),
-              Text(
-                _demo
-                    ? 'Demonstração local • acesso Google ainda não integrado.'
-                    : 'O acesso com Google será disponibilizado na próxima etapa.',
+            );
+          },
+        )
+      : Scaffold(
+          appBar: AppBar(title: const Text('Fera Metalúrgica')),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Bem-vindo ao ORCEX',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _demo
+                          ? 'Demonstração local • acesso Google ainda não integrado.'
+                          : 'O acesso com Google será disponibilizado na próxima etapa.',
+                    ),
+                    if (_demo) ...[
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: () => _open(context, false),
+                        child: const Text('Demonstração: comprador'),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => _open(context, true),
+                        child: const Text('Demonstração: vendedor'),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              if (_demo) ...[
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => _open(context, false),
-                  child: const Text('Demonstração: comprador'),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => _open(context, true),
-                  child: const Text('Demonstração: vendedor'),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-      ),
-    ),
-  );
+        );
   void _open(BuildContext context, bool seller) => Navigator.push(
     context,
     MaterialPageRoute<void>(builder: (_) => AppShell(seller: seller)),
@@ -86,7 +97,8 @@ class AccessScreen extends StatelessWidget {
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.seller});
+  const AppShell({super.key, required this.seller, this.token});
+  final String? token;
   final bool seller;
   @override
   State<AppShell> createState() => _AppShellState();
@@ -100,11 +112,13 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     api = ApiClient(
-      baseUrl: const String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'http://localhost:8080',
-      ),
-      token: widget.seller ? 'demo-seller' : 'demo-buyer',
+      baseUrl: widget.token != null
+          ? Uri.base.resolve('/api').toString()
+          : const String.fromEnvironment(
+              'API_BASE_URL',
+              defaultValue: 'http://localhost:8080',
+            ),
+      token: widget.token ?? (widget.seller ? 'demo-seller' : 'demo-buyer'),
     );
     quotes = QuoteViewModel(ApiQuoteRepository(api));
     quotes.load();
@@ -129,7 +143,7 @@ class _AppShellState extends State<AppShell> {
       actions: [
         IconButton(
           onPressed: () => Navigator.pop(context),
-          tooltip: 'Sair da demonstração',
+          tooltip: widget.token == null ? 'Sair da demonstração' : 'Sair',
           icon: const Icon(Icons.logout),
         ),
       ],

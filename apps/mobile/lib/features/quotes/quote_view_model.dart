@@ -26,7 +26,13 @@ class QuoteViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> submit(String product, String description, int quantity) async {
+  Future<bool> submit(
+    String product,
+    String description,
+    int quantity, {
+    String? customerName,
+    String? customerContact,
+  }) async {
     if (loading || _disposed) return false;
     loading = true;
     error = null;
@@ -37,6 +43,8 @@ class QuoteViewModel extends ChangeNotifier {
         product: product,
         description: description,
         quantity: quantity,
+        customerName: customerName,
+        customerContact: customerContact,
       );
       success = true;
     } catch (e) {

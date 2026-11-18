@@ -8,6 +8,8 @@ abstract interface class QuoteRepository {
     required String product,
     required String description,
     required int quantity,
+    String? customerName,
+    String? customerContact,
   });
 }
 
@@ -27,11 +29,15 @@ class ApiQuoteRepository implements QuoteRepository {
     required String product,
     required String description,
     required int quantity,
+    String? customerName,
+    String? customerContact,
   }) async {
     await api.post('/v1/quote-requests', {
       'product': product,
       'description': description,
       'quantity': quantity,
+      if (customerName != null) 'customerName': customerName,
+      if (customerContact != null) 'customerContact': customerContact,
     });
   }
 }

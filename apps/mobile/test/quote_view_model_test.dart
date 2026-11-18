@@ -18,6 +18,8 @@ class FakeQuotes implements QuoteRepository {
     required String product,
     required String description,
     required int quantity,
+    String? customerName,
+    String? customerContact,
   }) async {
     if (failCreate) throw Exception('Falha ao enviar');
     creates++;

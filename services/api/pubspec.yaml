@@ -5,6 +5,7 @@ version: 0.1.0
 environment:
   sdk: '>=3.8.0 <4.0.0'
 dependencies:
+  jose: ^0.3.5+2
   fera_contracts:
     path: ../../packages/contracts
   postgres: ^3.5.12

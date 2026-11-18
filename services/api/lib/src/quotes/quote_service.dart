@@ -22,11 +22,27 @@ class QuoteService {
   }
 
   Future<QuoteRequest> create(Principal actor, Map<String, dynamic> data) {
-    if (actor.role != UserRole.buyer) {
+    final seller = actor.role == UserRole.seller;
+    if (seller && !actor.sellerApproved) {
       throw const ApiError(
         403,
-        'buyer_required',
-        'Somente compradores criam solicitações.',
+        'seller_approval_required',
+        'Aguarde a aprovação do seu acesso de vendedor.',
+      );
+    }
+    final customerName = seller ? data['customerName'] : null;
+    final customerContact = seller ? data['customerContact'] : null;
+    if (seller &&
+        (customerName is! String ||
+            customerName.trim().isEmpty ||
+            customerName.length > 120 ||
+            (customerContact != null &&
+                (customerContact is! String ||
+                    customerContact.length > 120)))) {
+      throw const ApiError(
+        422,
+        'invalid_customer',
+        'Informe o nome do cliente (até 120 caracteres) e um contato opcional de até 120 caracteres.',
       );
     }
     final product = data['product'];
@@ -51,7 +67,13 @@ class QuoteService {
     return repository.create(
       QuoteRequest(
         id: const Uuid().v4(),
-        buyerId: actor.id,
+        buyerId: seller ? null : actor.id,
+        createdBy: actor.id,
+        customerName: customerName is String ? customerName.trim() : null,
+        customerContact:
+            customerContact is String && customerContact.trim().isNotEmpty
+            ? customerContact.trim()
+            : null,
         product: product.trim(),
         description: description.trim(),
         quantity: quantity,

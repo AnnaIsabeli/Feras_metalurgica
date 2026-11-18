@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 
 class AccountScreen extends StatefulWidget {
-  const AccountScreen({super.key, required this.api});
+  const AccountScreen({
+    super.key,
+    required this.api,
+    this.demonstration = true,
+  });
+  final bool demonstration;
   final ApiClient api;
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -64,8 +69,10 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                 const Divider(),
-                const Text(
-                  'Você está usando uma conta de demonstração. O login com Google ainda não está disponível.',
+                Text(
+                  widget.demonstration
+                      ? 'Você está usando uma conta de demonstração.'
+                      : 'Conta autenticada com Google. As permissões são controladas pela equipe.',
                 ),
               ],
             ],

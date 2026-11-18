@@ -1,0 +1,400 @@
+{
+  "source": "Precificador_SemRateio_Fera_Metalúrgica.xlsx",
+  "sheet": "Custos dos Insumos",
+  "sourceRows": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26
+  ],
+  "pricingRule": "Latest purchase date; equal dates use later source row. Six decimal places, ROUND_HALF_UP. Preserve original purchase ratio.",
+  "materials": [
+    {
+      "name": "Tinta esmalte / PU",
+      "unit": "L",
+      "purchases": [
+        {
+          "sourceRow": 8,
+          "purchaseDate": "2026-05-21",
+          "supplier": "Mercado Livre",
+          "quantity": "5.0",
+          "purchaseValue": "360.0",
+          "unitCostExactRatio": {
+            "numerator": "360.0",
+            "denominator": "5.0"
+          },
+          "unitCost": "72.000000"
+        }
+      ],
+      "selectedSourceRow": 8,
+      "unitCost": "72.000000"
+    },
+    {
+      "name": "Fundo anticorrosivo",
+      "unit": "L",
+      "purchases": [
+        {
+          "sourceRow": 9,
+          "purchaseDate": "2026-05-20",
+          "supplier": "Mercado Livre",
+          "quantity": "5.0",
+          "purchaseValue": "190.0",
+          "unitCostExactRatio": {
+            "numerator": "190.0",
+            "denominator": "5.0"
+          },
+          "unitCost": "38.000000"
+        }
+      ],
+      "selectedSourceRow": 9,
+      "unitCost": "38.000000"
+    },
+    {
+      "name": "Lixa 360 Ultra Soft",
+      "unit": "un",
+      "purchases": [
+        {
+          "sourceRow": 10,
+          "purchaseDate": "2026-06-26",
+          "supplier": "BIG 1,99",
+          "quantity": "100.0",
+          "purchaseValue": "120.0",
+          "unitCostExactRatio": {
+            "numerator": "120.0",
+            "denominator": "100.0"
+          },
+          "unitCost": "1.200000"
+        }
+      ],
+      "selectedSourceRow": 10,
+      "unitCost": "1.200000"
+    },
+    {
+      "name": "Brocas",
+      "unit": "un",
+      "purchases": [
+        {
+          "sourceRow": 11,
+          "purchaseDate": "2026-05-18",
+          "supplier": "Mercado Livre",
+          "quantity": "1.0",
+          "purchaseValue": "20.0",
+          "unitCostExactRatio": {
+            "numerator": "20.0",
+            "denominator": "1.0"
+          },
+          "unitCost": "20.000000"
+        }
+      ],
+      "selectedSourceRow": 11,
+      "unitCost": "20.000000"
+    },
+    {
+      "name": "Disco flap/desbaste",
+      "unit": "un",
+      "purchases": [
+        {
+          "sourceRow": 12,
+          "purchaseDate": "2026-05-17",
+          "supplier": "Mercado Livre",
+          "quantity": "1.0",
+          "purchaseValue": "18.0",
+          "unitCostExactRatio": {
+            "numerator": "18.0",
+            "denominator": "1.0"
+          },
+          "unitCost": "18.000000"
+        }
+      ],
+      "selectedSourceRow": 12,
+      "unitCost": "18.000000"
+    },
+    {
+      "name": "Disco de corte",
+      "unit": "un",
+      "purchases": [
+        {
+          "sourceRow": 13,
+          "purchaseDate": "2026-05-16",
+          "supplier": "Mercado Livre",
+          "quantity": "1.0",
+          "purchaseValue": "8.0",
+          "unitCostExactRatio": {
+            "numerator": "8.0",
+            "denominator": "1.0"
+          },
+          "unitCost": "8.000000"
+        }
+      ],
+      "selectedSourceRow": 13,
+      "unitCost": "8.000000"
+    },
+    {
+      "name": "Gás (MIG/TIG)",
+      "unit": "m³",
+      "purchases": [
+        {
+          "sourceRow": 14,
+          "purchaseDate": "2026-05-15",
+          "supplier": "Mercado Livre",
+          "quantity": "7.0",
+          "purchaseValue": "245.0",
+          "unitCostExactRatio": {
+            "numerator": "245.0",
+            "denominator": "7.0"
+          },
+          "unitCost": "35.000000"
+        }
+      ],
+      "selectedSourceRow": 14,
+      "unitCost": "35.000000"
+    },
+    {
+      "name": "Eletrodo",
+      "unit": "kg",
+      "purchases": [
+        {
+          "sourceRow": 15,
+          "purchaseDate": "2026-05-14",
+          "supplier": "Mercado Livre",
+          "quantity": "1.0",
+          "purchaseValue": "32.0",
+          "unitCostExactRatio": {
+            "numerator": "32.0",
+            "denominator": "1.0"
+          },
+          "unitCost": "32.000000"
+        }
+      ],
+      "selectedSourceRow": 15,
+      "unitCost": "32.000000"
+    },
+    {
+      "name": "Arame de solda",
+      "unit": "kg",
+      "purchases": [
+        {
+          "sourceRow": 16,
+          "purchaseDate": "2026-05-13",
+          "supplier": "Mercado Livre",
+          "quantity": "100.0",
+          "purchaseValue": "300.0",
+          "unitCostExactRatio": {
+            "numerator": "300.0",
+            "denominator": "100.0"
+          },
+          "unitCost": "3.000000"
+        }
+      ],
+      "selectedSourceRow": 16,
+      "unitCost": "3.000000"
+    },
+    {
+      "name": "Metalon 20x20",
+      "unit": "m",
+      "purchases": [
+        {
+          "sourceRow": 17,
+          "purchaseDate": "2026-05-12",
+          "supplier": "Mercado Livre",
+          "quantity": "6.0",
+          "purchaseValue": "22.0",
+          "unitCostExactRatio": {
+            "numerator": "22.0",
+            "denominator": "6.0"
+          },
+          "unitCost": "3.666667"
+        },
+        {
+          "sourceRow": 22,
+          "purchaseDate": "2026-04-08",
+          "supplier": "Mercado Livre",
+          "quantity": "6.0",
+          "purchaseValue": "22.0",
+          "unitCostExactRatio": {
+            "numerator": "22.0",
+            "denominator": "6.0"
+          },
+          "unitCost": "3.666667"
+        }
+      ],
+      "selectedSourceRow": 17,
+      "unitCost": "3.666667"
+    },
+    {
+      "name": "Metalon 10x10",
+      "unit": "m",
+      "purchases": [
+        {
+          "sourceRow": 18,
+          "purchaseDate": "2026-05-11",
+          "supplier": "Mercado Livre",
+          "quantity": "6.0",
+          "purchaseValue": "22.0",
+          "unitCostExactRatio": {
+            "numerator": "22.0",
+            "denominator": "6.0"
+          },
+          "unitCost": "3.666667"
+        }
+      ],
+      "selectedSourceRow": 18,
+      "unitCost": "3.666667"
+    },
+    {
+      "name": "Metalon 40x30",
+      "unit": "m",
+      "purchases": [
+        {
+          "sourceRow": 19,
+          "purchaseDate": "2026-05-10",
+          "supplier": "Mercado Livre",
+          "quantity": "6.0",
+          "purchaseValue": "80.0",
+          "unitCostExactRatio": {
+            "numerator": "80.0",
+            "denominator": "6.0"
+          },
+          "unitCost": "13.333333"
+        }
+      ],
+      "selectedSourceRow": 19,
+      "unitCost": "13.333333"
+    },
+    {
+      "name": "Verniz para madeira",
+      "unit": "L",
+      "purchases": [
+        {
+          "sourceRow": 20,
+          "purchaseDate": "2026-05-03",
+          "supplier": "Mercado Livre",
+          "quantity": "0.9",
+          "purchaseValue": "42.0",
+          "unitCostExactRatio": {
+            "numerator": "42.0",
+            "denominator": "0.9"
+          },
+          "unitCost": "46.666667"
+        }
+      ],
+      "selectedSourceRow": 20,
+      "unitCost": "46.666667"
+    },
+    {
+      "name": "Tabua Madeira Pinus",
+      "unit": "m",
+      "purchases": [
+        {
+          "sourceRow": 21,
+          "purchaseDate": "2026-05-02",
+          "supplier": "Mercado Livre",
+          "quantity": "1.0",
+          "purchaseValue": "7.2",
+          "unitCostExactRatio": {
+            "numerator": "7.2",
+            "denominator": "1.0"
+          },
+          "unitCost": "7.200000"
+        }
+      ],
+      "selectedSourceRow": 21,
+      "unitCost": "7.200000"
+    },
+    {
+      "name": "Parafuso Auto Brocante Chata Phillips 4,2x25",
+      "unit": "un",
+      "purchases": [
+        {
+          "sourceRow": 23,
+          "purchaseDate": "2026-04-08",
+          "supplier": "Mercado Livre",
+          "quantity": "500.0",
+          "purchaseValue": "29.9",
+          "unitCostExactRatio": {
+            "numerator": "29.9",
+            "denominator": "500.0"
+          },
+          "unitCost": "0.059800"
+        }
+      ],
+      "selectedSourceRow": 23,
+      "unitCost": "0.059800"
+    },
+    {
+      "name": "Tábua de Pinus 30x2x300",
+      "unit": "m",
+      "purchases": [
+        {
+          "sourceRow": 24,
+          "purchaseDate": "2026-04-08",
+          "supplier": "Mercado Livre",
+          "quantity": "3.0",
+          "purchaseValue": "29.96",
+          "unitCostExactRatio": {
+            "numerator": "29.96",
+            "denominator": "3.0"
+          },
+          "unitCost": "9.986667"
+        }
+      ],
+      "selectedSourceRow": 24,
+      "unitCost": "9.986667"
+    },
+    {
+      "name": "Thinner",
+      "unit": "L",
+      "purchases": [
+        {
+          "sourceRow": 25,
+          "purchaseDate": "2026-04-08",
+          "supplier": "Mercado Livre",
+          "quantity": "1.0",
+          "purchaseValue": "28.0",
+          "unitCostExactRatio": {
+            "numerator": "28.0",
+            "denominator": "1.0"
+          },
+          "unitCost": "28.000000"
+        }
+      ],
+      "selectedSourceRow": 25,
+      "unitCost": "28.000000"
+    },
+    {
+      "name": "Prego 40mm",
+      "unit": "un",
+      "purchases": [
+        {
+          "sourceRow": 26,
+          "purchaseDate": "2026-06-26",
+          "supplier": "Mercado Livre",
+          "quantity": "1000.0",
+          "purchaseValue": "120.0",
+          "unitCostExactRatio": {
+            "numerator": "120.0",
+            "denominator": "1000.0"
+          },
+          "unitCost": "0.120000"
+        }
+      ],
+      "selectedSourceRow": 26,
+      "unitCost": "0.120000"
+    }
+  ]
+}

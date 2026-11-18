@@ -223,7 +223,7 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
       1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
-      _ => AccountScreen(api: api),
+      _ => AccountScreen(api: api, demonstration: widget.token == null),
     },
     bottomNavigationBar: NavigationBar(
       selectedIndex: index,

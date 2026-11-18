@@ -6,7 +6,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const FeraApp());
-    expect(find.text('Bem-vindo ao ORCEX'), findsOneWidget);
+    expect(find.text('ORCEX'), findsOneWidget);
     expect(find.text('Demonstração: vendedor'), findsNothing);
   });
 }

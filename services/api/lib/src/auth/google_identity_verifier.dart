@@ -35,9 +35,13 @@ class GoogleIdentityVerifier implements IdentityVerifier {
   @override
   Future<Principal?> verify(String bearerToken) async {
     try {
-      if (bearerToken.length > 16384) return null;
+      if (bearerToken.length > 16384) {
+        return null;
+      }
       final parts = bearerToken.split('.');
-      if (parts.length != 3) return null;
+      if (parts.length != 3) {
+        return null;
+      }
       final header =
           jsonDecode(
                 utf8.decode(base64Url.decode(base64Url.normalize(parts[0]))),
@@ -46,13 +50,15 @@ class GoogleIdentityVerifier implements IdentityVerifier {
       if (header['alg'] != 'RS256' ||
           header.containsKey('jku') ||
           header.containsKey('jwk') ||
-          header.containsKey('x5u'))
+          header.containsKey('x5u')) {
         return null;
+      }
       final jwt = JsonWebToken.unverified(bearerToken);
       if (!await jwt
           .verify(keys, allowedArguments: ['RS256'])
-          .timeout(const Duration(seconds: 8)))
+          .timeout(const Duration(seconds: 8))) {
         return null;
+      }
       final claims = jwt.claims.toJson();
       final issuer = claims['iss'];
       final audience = claims['aud'];
@@ -62,27 +68,34 @@ class GoogleIdentityVerifier implements IdentityVerifier {
       final email = claims['email'];
       final time = now().toUtc().millisecondsSinceEpoch ~/ 1000;
       if (issuer != 'https://accounts.google.com' &&
-          issuer != 'accounts.google.com')
+          issuer != 'accounts.google.com') {
         return null;
+      }
       // Google ID tokens for this integration use one audience. Never trust client roles.
-      if (audience is! String || !clientIds.contains(audience)) return null;
-      if (claims['azp'] != null && !clientIds.contains(claims['azp']))
+      if (audience is! String || !clientIds.contains(audience)) {
         return null;
+      }
+      if (claims['azp'] != null && !clientIds.contains(claims['azp'])) {
+        return null;
+      }
       if (expiry is! int ||
           expiry <= time ||
           issued is! int ||
-          issued > time + 60)
+          issued > time + 60) {
         return null;
-      if (claims['nbf'] is num && (claims['nbf'] as num) > time + 60)
+      }
+      if (claims['nbf'] is num && (claims['nbf'] as num) > time + 60) {
         return null;
+      }
       if (subject is! String ||
           subject.isEmpty ||
           subject.length > 255 ||
           email is! String ||
           email.isEmpty ||
           email.length > 320 ||
-          claims['email_verified'] != true)
+          claims['email_verified'] != true) {
         return null;
+      }
       final displayName = claims['name'];
       return await accounts.resolve(
         subject: subject,

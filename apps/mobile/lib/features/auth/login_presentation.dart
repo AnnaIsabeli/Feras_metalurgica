@@ -34,9 +34,10 @@ class LoginPresentation extends StatelessWidget {
           final inset = MediaQuery.paddingOf(context);
           final compact = constraints.maxWidth < 600;
           final height = math.max(
-            760.0,
+            540.0,
             constraints.maxHeight - inset.vertical,
           );
+          final markSize = math.min(200.0, height * 200 / 852);
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -70,9 +71,12 @@ class LoginPresentation extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(height: height * .3286),
-                            const _FeraMark(),
+                            SizedBox.square(
+                              dimension: markSize,
+                              child: const FittedBox(child: _FeraMark()),
+                            ),
                             SizedBox(
-                              height: math.max(32.0, height * .3122 - 200),
+                              height: math.max(32.0, height * .3122 - markSize),
                             ),
                             _entry(),
                             const SizedBox(height: 24),

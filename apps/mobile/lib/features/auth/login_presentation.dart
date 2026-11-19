@@ -60,32 +60,27 @@ class LoginPresentation extends StatelessWidget {
                 ),
               SafeArea(
                 child: SingleChildScrollView(
-                  child: SizedBox(
-                    height: height,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: height),
                     child: Align(
                       alignment: Alignment.topCenter,
                       child: SizedBox(
                         width: 393,
-                        child: Stack(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Positioned(
-                              top: height * .3286,
-                              left: 0,
-                              right: 0,
-                              child: const Center(child: _FeraMark()),
+                            SizedBox(height: height * .3286),
+                            const _FeraMark(),
+                            SizedBox(
+                              height: math.max(32.0, height * .3122 - 200),
                             ),
-                            Positioned(
-                              top: height * .6408,
-                              left: 0,
-                              right: 0,
-                              child: Center(child: _entry()),
+                            _entry(),
+                            const SizedBox(height: 24),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 24),
+                              child: _AccessFooter(),
                             ),
-                            Positioned(
-                              bottom: 16,
-                              left: 24,
-                              right: 24,
-                              child: const _AccessFooter(),
-                            ),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),

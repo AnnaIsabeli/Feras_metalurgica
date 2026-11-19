@@ -1,10 +1,20 @@
 enum UserRole { buyer, seller }
 
 class Principal {
-  const Principal(this.id, this.role, {this.sellerApproved = false});
+  const Principal(
+    this.id,
+    this.role, {
+    this.sellerApproved = false,
+    this.adminEligible = false,
+    this.googleVerified = false,
+    this.tokenIssuedAt,
+  });
   final String id;
   final UserRole role;
   final bool sellerApproved;
+  final bool adminEligible;
+  final bool googleVerified;
+  final DateTime? tokenIssuedAt;
 }
 
 /// Boundary for verified identity. Google implementation is intentionally pending.

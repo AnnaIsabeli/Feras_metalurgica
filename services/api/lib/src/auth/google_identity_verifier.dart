@@ -97,13 +97,26 @@ class GoogleIdentityVerifier implements IdentityVerifier {
         return null;
       }
       final displayName = claims['name'];
-      return await accounts.resolve(
+      final account = await accounts.resolve(
         subject: subject,
         email: email,
         name: displayName is String && displayName.trim().isNotEmpty
             ? displayName.trim()
             : email,
       );
+      return account == null
+          ? null
+          : Principal(
+              account.id,
+              account.role,
+              sellerApproved: account.sellerApproved,
+              adminEligible: account.adminEligible,
+              googleVerified: true,
+              tokenIssuedAt: DateTime.fromMillisecondsSinceEpoch(
+                issued * 1000,
+                isUtc: true,
+              ),
+            );
     } catch (_) {
       // Do not leak credentials, JWT claims or database errors to the response/log.
       return null;

@@ -1,11 +1,19 @@
 import 'package:fera_mobile/features/home_screen.dart';
 import 'package:fera_mobile/features/quotes/quote_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fera_mobile/core/theme/orcex_theme.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'quote_view_model_test.dart' show FakeQuotes;
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    final fonts = FontLoader('Inter')
+      ..addFont(rootBundle.load('assets/fonts/Inter.ttf'));
+    await fonts.load();
+  });
   for (final size in [
     const Size(320, 568),
     const Size(1280, 720),
@@ -20,6 +28,7 @@ void main() {
         addTearDown(model.dispose);
         await tester.pumpWidget(
           MaterialApp(
+            theme: orcexTheme(),
             home: Scaffold(
               appBar: AppBar(),
               bottomNavigationBar: const SizedBox(height: 76),

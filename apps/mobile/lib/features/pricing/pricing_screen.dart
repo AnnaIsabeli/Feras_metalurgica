@@ -1019,12 +1019,16 @@ class _PricingScreenState extends State<PricingScreen> {
                 if (_result != null) ...[
                   const SizedBox(height: 24),
                   _statement(
-                    'Preço sugerido',
+                    _savedPricingId != null && _result!['practiced'] == null
+                        ? 'Valor do orçamento salvo'
+                        : 'Preço calculado',
                     _result!['suggested'] as Map<String, dynamic>,
                   ),
                   if (_result!['practiced'] != null)
                     _statement(
-                      'Preço negociado',
+                      _savedPricingId == null
+                          ? 'Preço negociado'
+                          : 'Valor do orçamento salvo',
                       _result!['practiced'] as Map<String, dynamic>,
                     ),
                 ],

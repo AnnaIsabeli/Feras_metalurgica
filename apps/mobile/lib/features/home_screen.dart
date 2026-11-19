@@ -58,12 +58,13 @@ class HomeScreen extends StatelessWidget {
             listenable: model,
             builder: (context, _) {
               if (model.loading) return const LinearProgressIndicator();
-              if (model.error != null)
+              if (model.error != null) {
                 return TextButton.icon(
                   onPressed: model.load,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Tentar atualizar os orçamentos'),
                 );
+              }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

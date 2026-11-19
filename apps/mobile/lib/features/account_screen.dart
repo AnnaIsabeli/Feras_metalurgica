@@ -58,6 +58,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 const SizedBox(height: 24),
                 if (widget.profile != null) ...[
                   TextFormField(
+                    style: const TextStyle(color: Color(0xff1f1d1b)),
                     initialValue: widget.profile!.name,
                     readOnly: true,
                     decoration: const InputDecoration(
@@ -68,6 +69,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
+                    style: const TextStyle(color: Color(0xff1f1d1b)),
                     initialValue: widget.profile!.email,
                     readOnly: true,
                     decoration: const InputDecoration(

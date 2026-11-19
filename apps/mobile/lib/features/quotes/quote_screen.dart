@@ -508,8 +508,9 @@ class _QuoteFiltersState extends State<_QuoteFilters> {
                         lastDate: DateTime(2050),
                         initialDateRange: _range,
                       );
-                      if (range != null && mounted)
+                      if (range != null && mounted) {
                         setState(() => _range = range);
+                      }
                     },
               icon: const Icon(Icons.calendar_month_outlined),
               label: Text(

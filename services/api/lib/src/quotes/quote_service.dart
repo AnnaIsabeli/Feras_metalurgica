@@ -20,32 +20,36 @@ class QuoteService {
       );
     }
     final customer = filters['customer']?.trim();
-    if (customer != null && customer.length > 120)
+    if (customer != null && customer.length > 120) {
       throw const ApiError(
         422,
         'invalid_filter',
         'O nome do cliente deve ter até 120 caracteres.',
       );
+    }
     for (final key in ['from', 'to']) {
       final value = filters[key];
-      if (value != null && (!_date(value)))
+      if (value != null && (!_date(value))) {
         throw const ApiError(
           422,
           'invalid_filter',
           'Informe uma data válida no formato ano-mês-dia.',
         );
+      }
     }
     if (filters['from'] != null &&
         filters['to'] != null &&
-        filters['from']!.compareTo(filters['to']!) > 0)
+        filters['from']!.compareTo(filters['to']!) > 0) {
       throw const ApiError(
         422,
         'invalid_filter',
         'A data inicial deve ser anterior à final.',
       );
+    }
     if (filters['status'] != null &&
-        !RequestStatus.values.any((s) => s.name == filters['status']))
+        !RequestStatus.values.any((s) => s.name == filters['status'])) {
       throw const ApiError(422, 'invalid_filter', 'Status inválido.');
+    }
     return repository.list(
       buyerId: actor.role == UserRole.buyer ? actor.id : null,
       customer: customer?.isEmpty == true ? null : customer,
@@ -64,14 +68,17 @@ class QuoteService {
   Future<QuoteRequest> get(Principal actor, String id) async {
     if (!RegExp(
       r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-    ).hasMatch(id))
+    ).hasMatch(id)) {
       throw const ApiError(422, 'invalid_quote', 'Orçamento inválido.');
-    if (actor.role == UserRole.seller && !actor.sellerApproved)
+    }
+    if (actor.role == UserRole.seller && !actor.sellerApproved) {
       throw const ApiError(403, 'seller_required', 'Acesso não aprovado.');
+    }
     final quote = await repository.find(id);
     if (quote == null ||
-        (actor.role == UserRole.buyer && quote.buyerId != actor.id))
+        (actor.role == UserRole.buyer && quote.buyerId != actor.id)) {
       throw const ApiError(404, 'quote_not_found', 'Orçamento não encontrado.');
+    }
     return quote;
   }
 
@@ -88,58 +95,66 @@ class QuoteService {
   ) async {
     if (!RegExp(
       r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-    ).hasMatch(id))
+    ).hasMatch(id)) {
       throw const ApiError(422, 'invalid_quote', 'Orçamento inválido.');
-    if (actor.role == UserRole.seller && !actor.sellerApproved)
+    }
+    if (actor.role == UserRole.seller && !actor.sellerApproved) {
       throw const ApiError(
         403,
         'seller_required',
         'Acesso de vendedor não aprovado.',
       );
+    }
     final quote = await repository.find(id);
     if (quote == null ||
-        (actor.role == UserRole.buyer && quote.buyerId != actor.id))
+        (actor.role == UserRole.buyer && quote.buyerId != actor.id)) {
       throw const ApiError(404, 'quote_not_found', 'Orçamento não encontrado.');
+    }
     final target = data['status'];
     final expected = data['expectedStatus'];
-    if (target is! String || expected is! String)
+    if (target is! String || expected is! String) {
       throw const ApiError(
         422,
         'invalid_status',
         'Informe o status e a versão atual do orçamento.',
       );
-    if (quote.status.name != expected)
+    }
+    if (quote.status.name != expected) {
       throw const ApiError(
         409,
         'status_changed',
         'O status mudou. Atualize o orçamento antes de continuar.',
       );
+    }
     if (actor.role == UserRole.buyer &&
         !(quote.status == RequestStatus.pending &&
-            ['approved', 'rejected'].contains(target)))
+            ['approved', 'rejected'].contains(target))) {
       throw const ApiError(
         403,
         'seller_required',
         'Esta operação pertence à equipe.',
       );
-    if (!(transitions[expected]?.contains(target) ?? false))
+    }
+    if (!(transitions[expected]?.contains(target) ?? false)) {
       throw const ApiError(
         409,
         'invalid_transition',
         'Esta mudança de status não é permitida.',
       );
+    }
     final updated = await repository.transition(
       id: id,
       expected: expected,
       target: target,
       actorId: actor.id,
     );
-    if (updated == null)
+    if (updated == null) {
       throw const ApiError(
         409,
         'status_changed',
         'O status mudou. Atualize antes de continuar.',
       );
+    }
     return await repository.find(id) ?? updated;
   }
 

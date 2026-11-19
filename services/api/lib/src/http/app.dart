@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../documents/quote_pdf_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import '../auth/principal.dart';
@@ -16,6 +17,7 @@ Response jsonResponse(int status, Object body) => Response(
 Handler buildHandler({
   required QuoteService quotes,
   PricingService? pricings,
+  QuotePdfService? pdfs,
   required IdentityVerifier identity,
   required Future<void> Function() checkDatabase,
   required String allowedOrigin,
@@ -130,6 +132,41 @@ Handler buildHandler({
     });
   }
 
+  if (pdfs != null) {
+    router.get('/v1/quote-requests/<id>/pdf', (
+      Request request,
+      String id,
+    ) async {
+      final user = await actor(request);
+      pdfs.authorize(user);
+      final download = request.url.queryParameters['download'];
+      if (download != null && download != '0' && download != '1') {
+        throw const ApiError(
+          422,
+          'invalid_download',
+          'Use download=1 para baixar o arquivo.',
+        );
+      }
+      final file = await pdfs.generate(
+        user,
+        id,
+        pricingId: request.url.queryParameters['pricingId'],
+      );
+      return Response.ok(
+        file.bytes,
+        headers: {
+          'content-type': 'application/pdf',
+          'content-disposition':
+              '${download == '1' ? 'attachment' : 'inline'}; filename="${file.filename}"',
+          'content-length': file.bytes.length.toString(),
+          'cache-control': 'private, no-store',
+          'pragma': 'no-cache',
+          'x-content-type-options': 'nosniff',
+        },
+      );
+    });
+  }
+
   final allowedOrigins = allowedOrigin
       .split(',')
       .map((value) => value.trim())
@@ -147,6 +184,7 @@ Handler buildHandler({
       'vary': 'Origin',
       'access-control-allow-methods': 'GET, POST, OPTIONS',
       'access-control-allow-headers': 'Authorization, Content-Type',
+      'access-control-expose-headers': 'Content-Disposition',
     };
     Response response;
     try {

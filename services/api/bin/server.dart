@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:fera_api/src/auth/google_identity_verifier.dart';
 import 'package:fera_api/src/database/postgres_google_account_repository.dart';
+import 'package:fera_api/src/database/postgres_quote_document_repository.dart';
+import 'package:fera_api/src/documents/quote_pdf_renderer.dart';
+import 'package:fera_api/src/documents/quote_pdf_service.dart';
 import 'package:fera_api/src/database/postgres_pricing_repository.dart';
 import 'package:fera_api/src/quotes/pricing_service.dart';
 import 'package:postgres/postgres.dart';
@@ -24,6 +27,10 @@ Future<void> main() async {
   }
   final handler = buildHandler(
     quotes: QuoteService(PostgresQuoteRepository(pool)),
+    pdfs: QuotePdfService(
+      PostgresQuoteDocumentRepository(pool),
+      await QuotePdfRenderer.load(),
+    ),
     pricings: PricingService(PostgresPricingRepository(pool)),
     identity: config.devAuth
         ? DevelopmentIdentityVerifier()

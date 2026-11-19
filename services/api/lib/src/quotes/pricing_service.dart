@@ -55,6 +55,20 @@ class PricingService {
     requestId(id);
     // Copy input to ensure normalization never mutates the caller's object.
     final input = jsonDecode(jsonEncode(data)) as Map<String, dynamic>;
+    final delivery = input['deliveryLeadTime'];
+    if (delivery != null) {
+      if (delivery is! String ||
+          delivery.trim().isEmpty ||
+          delivery.length > 240 ||
+          RegExp(r'[\x00-\x1f\x7f]').hasMatch(delivery)) {
+        throw const ApiError(
+          422,
+          'invalid_delivery_lead_time',
+          'Informe o prazo de entrega em até 240 caracteres.',
+        );
+      }
+      input['deliveryLeadTime'] = delivery.trim();
+    }
     final costs = input['costs'];
     if (costs is! List || costs.isEmpty || costs.length > 100) {
       throw const ApiError(

@@ -896,7 +896,7 @@ class _PricingScreenState extends State<PricingScreen> {
                         'Preço negociado por produto (R\$)',
                         validator: _optionalMoneyError,
                       ),
-                      if (request != null) ...[
+                      ...[
                         const SizedBox(height: 16),
                         TextFormField(
                           readOnly: !_canEdit,

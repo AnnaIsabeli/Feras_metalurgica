@@ -323,6 +323,10 @@ void main() {
       find.widgetWithText(TextFormField, 'Nome do cliente'),
       findsOneWidget,
     );
+    expect(
+      find.widgetWithText(TextFormField, 'Prazo de entrega (opcional)'),
+      findsOneWidget,
+    );
     expect(server.calls, ['GET /v1/materials']);
     expect(tester.takeException(), isNull);
   });

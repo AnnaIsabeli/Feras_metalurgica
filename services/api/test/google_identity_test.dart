@@ -51,9 +51,13 @@ void main() {
   test(
     'accepts verified identity and resolves permissions from repository',
     () async {
-      final value = claims()..['role'] = 'seller';
+      final value = claims()
+        ..['role'] = 'seller'
+        ..['adminEligible'] = true
+        ..['isAdmin'] = true;
       final actor = await verifier.verify(signed(value));
       expect(actor?.role, UserRole.buyer);
+      expect(actor?.adminEligible, isFalse);
       expect(accounts.calls, 1);
     },
   );

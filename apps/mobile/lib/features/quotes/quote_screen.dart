@@ -324,10 +324,12 @@ class _QuoteDetailScreenState extends State<QuoteDetailScreen> {
       _error = null;
     });
     try {
-      final data = await widget.api.post(
-        '/v1/quote-requests/${item.id}/status',
-        {'status': target, 'expectedStatus': item.status.name},
-      );
+      final data = await widget.api
+          .post('/v1/quote-requests/${item.id}/status', {
+            'status': target,
+            'expectedStatus': item.status.name,
+            'expectedPricingId': item.pricingId,
+          });
       if (mounted) setState(() => item = QuoteRequest.fromJson(data));
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());

@@ -208,8 +208,8 @@ void main() {
     expect(cost['name'], 'Metalon');
     expect(cost['quantity'], 2);
     expect(cost['unitCost'], 25.5);
-    await tester.ensureVisible(find.text('Preço sugerido'));
-    expect(find.text('Preço sugerido'), findsOneWidget);
+    await tester.ensureVisible(find.text('Preço calculado'));
+    expect(find.text('Preço calculado'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -232,7 +232,7 @@ void main() {
     expect(cost.containsKey('unitCost'), isFalse); // o servidor decide o custo
     expect(sent['rates']['targetNetMarginRate'], 0);
     expect(find.textContaining('Orçamento salvo'), findsOneWidget);
-    expect(find.text('Preço sugerido'), findsOneWidget);
+    expect(find.text('Valor do orçamento salvo'), findsOneWidget);
 
     // Fecha e abre de novo: precisa continuar lá.
     await openScreen(tester, server, forRequest: request);
@@ -241,7 +241,7 @@ void main() {
     );
     expect(quantity.controller!.text, '2');
     expect(find.textContaining('Última precificação salva em'), findsOneWidget);
-    expect(find.text('Preço sugerido'), findsOneWidget);
+    expect(find.text('Valor do orçamento salvo'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

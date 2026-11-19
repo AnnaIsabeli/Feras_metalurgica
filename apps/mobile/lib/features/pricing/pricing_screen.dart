@@ -1019,12 +1019,18 @@ class _PricingScreenState extends State<PricingScreen> {
                 if (_result != null) ...[
                   const SizedBox(height: 24),
                   _statement(
-                    'Preço sugerido',
+                    _savedPricingId != null &&
+                            !_dirty &&
+                            _result!['practiced'] == null
+                        ? 'Valor do orçamento salvo'
+                        : 'Preço calculado',
                     _result!['suggested'] as Map<String, dynamic>,
                   ),
                   if (_result!['practiced'] != null)
                     _statement(
-                      'Preço negociado',
+                      _savedPricingId == null || _dirty
+                          ? 'Preço negociado'
+                          : 'Valor do orçamento salvo',
                       _result!['practiced'] as Map<String, dynamic>,
                     ),
                 ],
@@ -1039,7 +1045,9 @@ class _PricingScreenState extends State<PricingScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Precificar orçamento')),
+    appBar: AppBar(
+      title: Text(_request == null ? 'Criar orçamento' : 'Composição e PDF'),
+    ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _loadError != null

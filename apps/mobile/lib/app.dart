@@ -1,3 +1,6 @@
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/theme/orcex_theme.dart';
+import 'features/home_screen.dart';
 import 'features/auth/google_login_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -15,25 +18,14 @@ class FeraApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Fera Metalúrgica',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xffff7800),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xff363431),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xffff7800),
-          foregroundColor: Colors.black,
-          minimumSize: const Size(0, 48),
-        ),
-      ),
-    ),
+    theme: orcexTheme(),
+    locale: const Locale('pt', 'BR'),
+    supportedLocales: const [Locale('pt', 'BR')],
+    localizationsDelegates: const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
     home: const AccessScreen(),
   );
 }
@@ -142,6 +134,16 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
+      automaticallyImplyLeading: false,
+      leadingWidth: 76,
+      leading: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        child: Image.asset(
+          'assets/brand/header-logo.png',
+          fit: BoxFit.contain,
+          semanticLabel: 'Fera Metalúrgica',
+        ),
+      ),
       title: const Text('ORCEX'),
       actions: [
         IconButton(
@@ -157,76 +159,17 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
     body: switch (index) {
-      0 => Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              Text(
-                widget.profile == null
-                    ? (widget.seller ? 'Olá, vendedor' : 'Olá, comprador')
-                    : 'Olá, ${widget.profile!.firstName}',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                widget.seller
-                    ? 'Consulte as solicitações e prepare o preço de cada produto.'
-                    : 'Descreva o que você precisa e acompanhe seus orçamentos.',
-              ),
-              const SizedBox(height: 24),
-              ListenableBuilder(
-                listenable: quotes,
-                builder: (context, _) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          quotes.loading
-                              ? 'Carregando solicitações…'
-                              : quotes.error != null
-                              ? 'Não foi possível atualizar as solicitações.'
-                              : '${quotes.items.length} solicitações registradas',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: () => select(1),
-                          icon: const Icon(Icons.request_quote_outlined),
-                          label: const Text('Abrir orçamentos'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => widget.seller
-                        ? PricingScreen(api: api, onSaved: quotes.load)
-                        : NewQuoteScreen(model: quotes),
-                  ),
-                ),
-                icon: Icon(
-                  widget.seller ? Icons.calculate_outlined : Icons.add,
-                ),
-                label: Text(
-                  widget.seller ? 'Criar orçamento' : 'Solicitar orçamento',
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                widget.seller
-                    ? 'Informe o cliente, componha os valores e salve o orçamento completo com seu PDF.'
-                    : 'Informe produto, quantidade e os detalhes necessários para o atendimento.',
-              ),
-            ],
+      0 => HomeScreen(
+        model: quotes,
+        seller: widget.seller,
+        profile: widget.profile,
+        onList: () => select(1),
+        onCreate: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => widget.seller
+                ? PricingScreen(api: api, onSaved: quotes.load)
+                : NewQuoteScreen(model: quotes),
           ),
         ),
       ),
@@ -249,8 +192,8 @@ class _AppShellState extends State<AppShell> {
           icon: Icon(Icons.request_quote_outlined),
           label: 'Orçamentos',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.account_circle_outlined),
+        NavigationDestination(
+          icon: ProfileAvatar(profile: widget.profile, size: 26),
           label: 'Conta',
         ),
       ],

@@ -271,8 +271,13 @@ class _PricingScreenState extends State<PricingScreen> {
   Future<void> _exportPdf({required bool download}) async {
     final request = _request;
     final revision = _savedPricingId;
-    if (request == null || revision == null || _dirty || _busy || _exportingPdf)
+    if (request == null ||
+        revision == null ||
+        _dirty ||
+        _busy ||
+        _exportingPdf) {
       return;
+    }
     setState(() {
       _exportingPdf = true;
       _error = null;
@@ -287,8 +292,9 @@ class _PricingScreenState extends State<PricingScreen> {
       final completed = download
           ? await widget.pdfActions.download(file)
           : await widget.pdfActions.preview(file);
-      if (mounted)
+      if (mounted) {
         setState(() => _notice = completed ? 'PDF pronto.' : 'Ação cancelada.');
+      }
     } catch (error) {
       if (mounted) setState(() => _error = _message(error));
     } finally {
@@ -446,10 +452,11 @@ class _PricingScreenState extends State<PricingScreen> {
             );
       if (!mounted) return;
       setState(() {
-        if (saved['quote'] is Map<String, dynamic>)
+        if (saved['quote'] is Map<String, dynamic>) {
           _createdRequest = QuoteRequest.fromJson(
             saved['quote'] as Map<String, dynamic>,
           );
+        }
         _result = saved['result'] as Map<String, dynamic>?;
         _savedPricingId = saved['id'] as String?;
         _dirty = false;

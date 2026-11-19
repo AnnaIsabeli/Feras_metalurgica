@@ -63,13 +63,14 @@ class PdfScreenApi {
     if (r.url.path == '/v1/materials') return json(200, {'items': []});
     if (r.url.path.endsWith('/pdf')) {
       pdfCalls.add(r.url);
-      if (pdfStatus != 200)
+      if (pdfStatus != 200) {
         return json(pdfStatus, {
           'error': {
             'code': 'pricing_not_found',
             'message': 'Salve uma precificação antes de gerar o PDF.',
           },
         });
+      }
       return http.Response.bytes(
         utf8.encode('%PDF-1.7\ntest'),
         200,

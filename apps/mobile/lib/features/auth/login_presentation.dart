@@ -113,9 +113,8 @@ class LoginPresentation extends StatelessWidget {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: orange,
-            borderRadius: BorderRadius.circular(10),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: orange, width: 3)),
           ),
           child: const Text(
             'Entrar no ORCEX',

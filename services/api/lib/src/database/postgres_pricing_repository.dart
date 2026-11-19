@@ -184,6 +184,14 @@ class PostgresPricingRepository implements PricingRepository {
         },
       );
     }
+    if (quote['status'] != 'pending') {
+      await session.execute(
+        Sql.named(
+          "INSERT INTO quote_status_events(quote_request_id,from_status,to_status,changed_by) VALUES (@id,@old,'pending',@actor)",
+        ),
+        parameters: {'id': requestId, 'old': quote['status'], 'actor': actorId},
+      );
+    }
     await session.execute(
       Sql.named("UPDATE quote_requests SET status='pending' WHERE id=@id"),
       parameters: {'id': requestId},

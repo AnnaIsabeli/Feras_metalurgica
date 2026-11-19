@@ -85,11 +85,25 @@ Handler buildHandler({
       });
     })
     ..get('/v1/quote-requests', (Request request) async {
-      final items = await quotes.list(await actor(request));
+      final items = await quotes.list(
+        await actor(request),
+        filters: request.url.queryParameters,
+      );
       return jsonResponse(200, {
         'items': items.map((q) => q.toJson()).toList(),
       });
     })
+    ..post(
+      '/v1/quote-requests/<id>/status',
+      (Request request, String id) async => jsonResponse(
+        200,
+        (await quotes.changeStatus(
+          await actor(request),
+          id,
+          await readJson(request),
+        )).toJson(),
+      ),
+    )
     ..post('/v1/pricing/calculate', (Request request) async {
       final user = await actor(request);
       if (user.role != UserRole.seller || !user.sellerApproved) {

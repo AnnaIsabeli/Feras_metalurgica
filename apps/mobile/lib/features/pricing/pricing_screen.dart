@@ -131,6 +131,16 @@ class _PricingScreenState extends State<PricingScreen> {
   bool _busy = false;
   bool _saving = false;
 
+  bool get _canEdit =>
+      _request == null ||
+      ![
+        RequestStatus.approved,
+        RequestStatus.inProduction,
+        RequestStatus.completed,
+        RequestStatus.cancelled,
+        RequestStatus.closed,
+      ].contains(_request!.status);
+
   String? get _product => _request?.product;
   int get _quantity =>
       _request?.quantity ?? int.tryParse(_quoteQuantity.text) ?? 1;
@@ -368,7 +378,7 @@ class _PricingScreenState extends State<PricingScreen> {
 
   /// Preview the values within this quote before saving.
   Future<void> _calculate() async {
-    if (_busy || _exportingPdf || !_validate()) return;
+    if (!_canEdit || _busy || _exportingPdf || !_validate()) return;
     setState(() {
       _busy = true;
       _saving = false;
@@ -424,7 +434,7 @@ class _PricingScreenState extends State<PricingScreen> {
   };
 
   Future<void> _save() async {
-    if (_busy || _exportingPdf || !_validate()) return;
+    if (!_canEdit || _busy || _exportingPdf || !_validate()) return;
     setState(() {
       _busy = true;
       _saving = true;
@@ -476,6 +486,7 @@ class _PricingScreenState extends State<PricingScreen> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       TextFormField(
+        readOnly: !_canEdit,
         controller: _customerName,
         maxLength: 120,
         decoration: const InputDecoration(labelText: 'Nome do cliente'),
@@ -484,6 +495,7 @@ class _PricingScreenState extends State<PricingScreen> {
       ),
       const SizedBox(height: 12),
       TextFormField(
+        readOnly: !_canEdit,
         controller: _customerContact,
         maxLength: 120,
         decoration: const InputDecoration(
@@ -492,6 +504,7 @@ class _PricingScreenState extends State<PricingScreen> {
       ),
       const SizedBox(height: 12),
       TextFormField(
+        readOnly: !_canEdit,
         controller: _quoteProduct,
         maxLength: 120,
         decoration: const InputDecoration(labelText: 'Produto ou serviço'),
@@ -500,6 +513,7 @@ class _PricingScreenState extends State<PricingScreen> {
       ),
       const SizedBox(height: 12),
       TextFormField(
+        readOnly: !_canEdit,
         controller: _quoteDescription,
         maxLength: 4000,
         minLines: 2,
@@ -510,6 +524,7 @@ class _PricingScreenState extends State<PricingScreen> {
       ),
       const SizedBox(height: 12),
       TextFormField(
+        readOnly: !_canEdit,
         controller: _quoteQuantity,
         keyboardType: TextInputType.number,
         decoration: const InputDecoration(labelText: 'Quantidade de produtos'),
@@ -530,6 +545,7 @@ class _PricingScreenState extends State<PricingScreen> {
     required String? Function(String?) validator,
     String? suffix,
   }) => TextFormField(
+    readOnly: !_canEdit,
     controller: controller,
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: InputDecoration(labelText: label, suffixText: suffix),
@@ -619,6 +635,7 @@ class _PricingScreenState extends State<PricingScreen> {
             if (cost.manual) ...[
               const SizedBox(height: 12),
               TextFormField(
+                readOnly: !_canEdit,
                 controller: cost.name,
                 maxLength: 120,
                 decoration: const InputDecoration(
@@ -629,6 +646,7 @@ class _PricingScreenState extends State<PricingScreen> {
                     : null,
               ),
               TextFormField(
+                readOnly: !_canEdit,
                 controller: cost.unit,
                 maxLength: 30,
                 decoration: const InputDecoration(
@@ -820,9 +838,12 @@ class _PricingScreenState extends State<PricingScreen> {
                           ),
                         ),
                       for (var i = 0; i < _costs.length; i++)
-                        _costCard(_costs[i], i),
+                        IgnorePointer(
+                          ignoring: !_canEdit,
+                          child: _costCard(_costs[i], i),
+                        ),
                       OutlinedButton.icon(
-                        onPressed: _costs.length >= 100
+                        onPressed: !_canEdit || _costs.length >= 100
                             ? null
                             : () => setState(() {
                                 _costs.add(_CostFields());
@@ -878,6 +899,7 @@ class _PricingScreenState extends State<PricingScreen> {
                       if (request != null) ...[
                         const SizedBox(height: 16),
                         TextFormField(
+                          readOnly: !_canEdit,
                           controller: _deliveryLeadTime,
                           maxLength: 240,
                           decoration: const InputDecoration(
@@ -918,7 +940,9 @@ class _PricingScreenState extends State<PricingScreen> {
                   runSpacing: 12,
                   children: [
                     FilledButton.icon(
-                      onPressed: _busy || _exportingPdf ? null : _calculate,
+                      onPressed: !_canEdit || _busy || _exportingPdf
+                          ? null
+                          : _calculate,
                       icon: _busy && !_saving
                           ? const SizedBox(
                               width: 20,
@@ -931,7 +955,9 @@ class _PricingScreenState extends State<PricingScreen> {
                       ),
                     ),
                     FilledButton.tonalIcon(
-                      onPressed: _busy || _exportingPdf ? null : _save,
+                      onPressed: !_canEdit || _busy || _exportingPdf
+                          ? null
+                          : _save,
                       icon: _busy && _saving
                           ? const SizedBox(
                               width: 20,

@@ -17,8 +17,32 @@ class MemoryQuotes implements QuoteRepository {
   }
 
   @override
-  Future<List<QuoteRequest>> list({String? buyerId}) async =>
+  Future<List<QuoteRequest>> list({
+    String? buyerId,
+    String? customer,
+    String? from,
+    String? to,
+    String? status,
+  }) async =>
       items.where((q) => buyerId == null || q.buyerId == buyerId).toList();
+  @override
+  Future<QuoteRequest?> find(String id) async =>
+      items.where((q) => q.id == id).firstOrNull;
+  @override
+  Future<QuoteRequest?> transition({
+    required String id,
+    required String expected,
+    required String target,
+    required String actorId,
+    required String expectedPricingId,
+  }) async {
+    final i = items.indexWhere((q) => q.id == id && q.status.name == expected);
+    if (i < 0) return null;
+    return items[i] = QuoteRequest.fromJson({
+      ...items[i].toJson(),
+      'status': target,
+    });
+  }
 }
 
 void main() {

@@ -16,8 +16,9 @@ class FakeAdminServer {
       result = {'session': List.filled(43, 'a').join(), 'expiresIn': 300};
     } else {
       expect(request.headers['x-admin-session'], List.filled(43, 'a').join());
-      if (request.url.path == '/v1/admin/overview')
+      if (request.url.path == '/v1/admin/overview') {
         result = {'users': [], 'invitations': [], 'audit': []};
+      }
       if (request.url.path == '/v1/admin/invitations') {
         invitations.add(jsonDecode(request.body) as Map<String, dynamic>);
         result = {'status': 'pending'};

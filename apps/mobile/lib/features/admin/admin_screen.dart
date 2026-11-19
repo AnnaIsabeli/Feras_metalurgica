@@ -85,13 +85,19 @@ class _AdminScreenState extends State<AdminScreen> with WidgetsBindingObserver {
     try {
       await task();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
-          if (e is ApiException && e.code == 'admin_session_required') {
+          if (e is ApiException &&
+              {
+                'admin_session_required',
+                'admin_required',
+                'unauthorized',
+              }.contains(e.code)) {
             _clear();
           }
           _error = e.toString();
         });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -99,11 +105,12 @@ class _AdminScreenState extends State<AdminScreen> with WidgetsBindingObserver {
 
   Future<void> _enroll() => _run(() async {
     final result = await widget.api.post('/v1/admin/enrollment', {});
-    if (mounted)
+    if (mounted) {
       setState(() {
         _setupUri = result['otpauthUri'] as String;
         _manualKey = result['manualKey'] as String;
       });
+    }
   });
   Future<void> _unlock() => _run(() async {
     final result = await widget.api.post('/v1/admin/session', {
@@ -118,13 +125,14 @@ class _AdminScreenState extends State<AdminScreen> with WidgetsBindingObserver {
     _expiresAt = DateTime.now().add(duration);
     _expiry?.cancel();
     _expiry = Timer(duration, () {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _clear(
             message:
                 'Sessão administrativa encerrada. Confirme um novo código.',
           ),
         );
+      }
     });
     await _load();
   });

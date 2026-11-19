@@ -7,6 +7,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_svg: ^2.2.1
   fera_contracts:
     path: ../../packages/contracts
   http: ^1.4.0
@@ -25,6 +28,10 @@ flutter:
     - assets/brand/fera-mark-source.png
     - assets/brand/profile-placeholder.png
     - assets/brand/header-profile.png
+    - assets/brand/header-logo.png
+    - assets/brand/project-feature.png
+    - assets/brand/action-add.svg
+    - assets/brand/action-list.svg
   fonts:
     - family: Inter
       fonts:

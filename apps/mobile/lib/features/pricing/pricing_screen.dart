@@ -1039,7 +1039,9 @@ class _PricingScreenState extends State<PricingScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Precificar orçamento')),
+    appBar: AppBar(
+      title: Text(_request == null ? 'Criar orçamento' : 'Composição e PDF'),
+    ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _loadError != null

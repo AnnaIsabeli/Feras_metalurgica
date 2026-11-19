@@ -11,13 +11,15 @@ class QuoteViewModel extends ChangeNotifier {
   String? error;
   bool _disposed = false;
 
-  Future<void> load() async {
+  Map<String, String> _filters = const {};
+  Future<void> load({Map<String, String>? filters}) async {
     if (loading || _disposed) return;
+    if (filters != null) _filters = Map.unmodifiable(filters);
     loading = true;
     error = null;
     notifyListeners();
     try {
-      items = await repository.list();
+      items = await repository.list(filters: _filters);
     } catch (e) {
       error = e.toString();
     } finally {

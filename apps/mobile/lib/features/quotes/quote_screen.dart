@@ -53,6 +53,10 @@ class QuoteScreen extends StatelessWidget {
             label: Text(seller ? 'Criar orçamento' : 'Solicitar orçamento'),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: _QuoteFilters(model: model, seller: seller),
+        ),
         if (model.loading) const LinearProgressIndicator(),
         if (model.error != null)
           Padding(
@@ -67,7 +71,7 @@ class QuoteScreen extends StatelessWidget {
                         ? 'Tente atualizar novamente.'
                         : model.loading
                         ? 'Carregando…'
-                        : 'Nenhuma solicitação por enquanto.',
+                        : 'Nenhum orçamento neste filtro.',
                   ),
                 )
               : ListView.builder(
@@ -82,18 +86,21 @@ class QuoteScreen extends StatelessWidget {
                       child: ListTile(
                         title: Text(item.product),
                         subtitle: Text(
-                          '${item.customerName == null ? '' : '${item.customerName} • '}${item.quantity} unidade(s) • ${_statusLabel(item.status)}',
+                          '${item.customerName ?? 'Cliente'} • ${item.createdAt.toLocal().day}/${item.createdAt.toLocal().month}/${item.createdAt.toLocal().year}\n${_statusLabel(item.status)}${item.unitPriceCents == null ? '' : ' • ${money(item.unitPriceCents! * item.quantity / 100)}'}',
                         ),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => QuoteDetailScreen(
-                              item: item,
-                              seller: seller,
-                              api: api,
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => QuoteDetailScreen(
+                                item: item,
+                                seller: seller,
+                                api: api,
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                          await model.load();
+                        },
                       ),
                     );
                   },
@@ -105,7 +112,7 @@ class QuoteScreen extends StatelessWidget {
 }
 
 String _statusLabel(RequestStatus status) => switch (status) {
-  RequestStatus.received => 'Recebida',
+  RequestStatus.received => 'A precificar',
   RequestStatus.needsInformation => 'Aguardando informações',
   RequestStatus.drafting => 'Em elaboração',
   RequestStatus.quoted => 'Proposta enviada',
@@ -265,7 +272,7 @@ class _NewQuoteScreenState extends State<NewQuoteScreen> {
   );
 }
 
-class QuoteDetailScreen extends StatelessWidget {
+class QuoteDetailScreen extends StatefulWidget {
   const QuoteDetailScreen({
     super.key,
     required this.item,
@@ -276,11 +283,86 @@ class QuoteDetailScreen extends StatelessWidget {
   final bool seller;
   final ApiClient api;
   @override
+  State<QuoteDetailScreen> createState() => _QuoteDetailScreenState();
+}
+
+class _QuoteDetailScreenState extends State<QuoteDetailScreen> {
+  late QuoteRequest item = widget.item;
+  bool _busy = false;
+  String? _error;
+  Future<void> _refresh() async {
+    try {
+      final data = await widget.api.get('/v1/quote-requests/${item.id}');
+      if (mounted) setState(() => item = QuoteRequest.fromJson(data));
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    }
+  }
+
+  Future<void> _status(String target) async {
+    final label = _statusLabel(RequestStatus.values.byName(target));
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Atualizar orçamento'),
+        content: Text('Alterar o status para “$label”?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Voltar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final data = await widget.api.post(
+        '/v1/quote-requests/${item.id}/status',
+        {'status': target, 'expectedStatus': item.status.name},
+      );
+      if (mounted) setState(() => item = QuoteRequest.fromJson(data));
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  List<String> get _next => switch (item.status) {
+    RequestStatus.pending =>
+      widget.seller
+          ? ['approved', 'rejected', 'cancelled']
+          : ['approved', 'rejected'],
+    RequestStatus.approved =>
+      widget.seller ? ['inProduction', 'cancelled'] : [],
+    RequestStatus.inProduction =>
+      widget.seller ? ['completed', 'cancelled'] : [],
+    RequestStatus.rejected => widget.seller ? ['cancelled'] : [],
+    _ => [],
+  };
+  @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Detalhes do orçamento')),
+    appBar: AppBar(
+      title: const Text('Orçamento'),
+      actions: [
+        IconButton(
+          onPressed: _busy ? null : _refresh,
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Atualizar',
+        ),
+      ],
+    ),
     body: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
+        constraints: const BoxConstraints(maxWidth: 900),
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -298,45 +380,204 @@ class QuoteDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Descrição do pedido',
-              style: Theme.of(context).textTheme.titleMedium,
+              item.customerName ?? 'Cliente',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 8),
+            if (item.customerContact != null)
+              SelectableText(item.customerContact!),
+            const SizedBox(height: 16),
             Text(item.description),
-            if (item.customerName != null) ...[
+            if (item.unitPriceCents != null) ...[
               const SizedBox(height: 24),
-              Text('Cliente: ${item.customerName}'),
-              if (item.customerContact != null)
-                SelectableText('Contato: ${item.customerContact}'),
-              const Text(
-                'Pedido registrado pela equipe, sem exigir conta do cliente.',
+              Text(
+                'Total: ${money(item.unitPriceCents! * item.quantity / 100)}',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
+              Text('Valor unitário: ${money(item.unitPriceCents! / 100)}'),
             ],
             const SizedBox(height: 24),
-            Text(
-              'Solicitado em ${item.createdAt.toLocal().day}/${item.createdAt.toLocal().month}/${item.createdAt.toLocal().year}',
-            ),
-            const SizedBox(height: 8),
+            Text('Criado em ${dateTime(item.createdAt.toLocal())}'),
             SelectableText('Referência: ${item.id}'),
-            const SizedBox(height: 32),
-            if (seller)
+            const SizedBox(height: 24),
+            if (widget.seller)
               FilledButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => PricingScreen(api: api, request: item),
-                  ),
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                PricingScreen(api: widget.api, request: item),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                icon: const Icon(Icons.request_quote_outlined),
+                label: Text(
+                  item.pricingId == null
+                      ? 'Compor e salvar orçamento'
+                      : 'Composição e PDF',
                 ),
-                icon: const Icon(Icons.calculate_outlined),
-                label: const Text('Precificar esta solicitação'),
-              )
-            else
-              const Text(
-                'Sua solicitação foi registrada. A proposta comercial ainda não está disponível nesta versão.',
               ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(_error!),
+              ),
+            if (_busy) const LinearProgressIndicator(),
+            if (_next.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Text('Andamento', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final target in _next)
+                    OutlinedButton(
+                      onPressed: _busy ? null : () => _status(target),
+                      child: Text(
+                        _statusLabel(RequestStatus.values.byName(target)),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     ),
+  );
+}
+
+class _QuoteFilters extends StatefulWidget {
+  const _QuoteFilters({required this.model, required this.seller});
+  final QuoteViewModel model;
+  final bool seller;
+  @override
+  State<_QuoteFilters> createState() => _QuoteFiltersState();
+}
+
+class _QuoteFiltersState extends State<_QuoteFilters> {
+  final _customer = TextEditingController();
+  DateTimeRange? _range;
+  String? _statusValue;
+  @override
+  void dispose() {
+    _customer.dispose();
+    super.dispose();
+  }
+
+  String _day(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  void _apply() => widget.model.load(
+    filters: {
+      if (_customer.text.trim().isNotEmpty) 'customer': _customer.text.trim(),
+      if (_range != null) 'from': _day(_range!.start),
+      if (_range != null) 'to': _day(_range!.end),
+      'status': ?_statusValue,
+    },
+  );
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (widget.seller)
+        TextField(
+          controller: _customer,
+          maxLength: 120,
+          decoration: const InputDecoration(
+            labelText: 'Filtrar por cliente',
+            prefixIcon: Icon(Icons.search),
+            counterText: '',
+          ),
+          onSubmitted: (_) => _apply(),
+        ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: widget.model.loading
+                  ? null
+                  : () async {
+                      final range = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2050),
+                        initialDateRange: _range,
+                      );
+                      if (range != null && mounted)
+                        setState(() => _range = range);
+                    },
+              icon: const Icon(Icons.calendar_month_outlined),
+              label: Text(
+                _range == null
+                    ? 'Data'
+                    : '${_range!.start.day}/${_range!.start.month}–${_range!.end.day}/${_range!.end.month}',
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              key: ValueKey(_statusValue),
+              initialValue: _statusValue,
+              hint: const Text('Todos'),
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Status'),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Todos')),
+                for (final s in [
+                  RequestStatus.received,
+                  RequestStatus.pending,
+                  RequestStatus.approved,
+                  RequestStatus.rejected,
+                  RequestStatus.inProduction,
+                  RequestStatus.completed,
+                  RequestStatus.cancelled,
+                ])
+                  DropdownMenuItem(
+                    value: s.name,
+                    child: Text(
+                      _statusLabel(s),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: widget.model.loading
+                  ? null
+                  : (value) => setState(() => _statusValue = value),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          Expanded(
+            child: FilledButton(
+              onPressed: widget.model.loading ? null : _apply,
+              child: const Text('Filtrar'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(
+            onPressed: widget.model.loading
+                ? null
+                : () {
+                    _customer.clear();
+                    setState(() {
+                      _range = null;
+                      _statusValue = null;
+                    });
+                    widget.model.load(filters: const {});
+                  },
+            child: const Text('Limpar'),
+          ),
+        ],
+      ),
+    ],
   );
 }

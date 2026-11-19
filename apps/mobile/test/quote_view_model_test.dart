@@ -8,7 +8,9 @@ class FakeQuotes implements QuoteRepository {
   bool failCreate = false;
   int creates = 0;
   @override
-  Future<List<QuoteRequest>> list() async {
+  Future<List<QuoteRequest>> list({
+    Map<String, String> filters = const {},
+  }) async {
     if (failLoad) throw Exception('Sem conexão');
     return [];
   }

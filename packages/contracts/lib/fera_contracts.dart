@@ -24,6 +24,8 @@ class QuoteRequest {
     this.createdBy,
     this.customerName,
     this.customerContact,
+    this.unitPriceCents,
+    this.pricingId,
   });
 
   final String id;
@@ -31,6 +33,8 @@ class QuoteRequest {
   final String? createdBy;
   final String? customerName;
   final String? customerContact;
+  final int? unitPriceCents;
+  final String? pricingId;
   final String product;
   final String description;
   final int quantity;
@@ -43,6 +47,8 @@ class QuoteRequest {
     createdBy: json['createdBy'] as String?,
     customerName: json['customerName'] as String?,
     customerContact: json['customerContact'] as String?,
+    unitPriceCents: json['unitPriceCents'] as int?,
+    pricingId: json['pricingId'] as String?,
     product: json['product'] as String,
     description: json['description'] as String,
     quantity: json['quantity'] as int,
@@ -56,6 +62,8 @@ class QuoteRequest {
     'createdBy': createdBy,
     'customerName': customerName,
     'customerContact': customerContact,
+    'unitPriceCents': unitPriceCents,
+    'pricingId': pricingId,
     'product': product,
     'description': description,
     'quantity': quantity,

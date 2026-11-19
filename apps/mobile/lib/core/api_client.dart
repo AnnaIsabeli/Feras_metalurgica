@@ -29,17 +29,25 @@ class ApiClient {
   final String token;
   final http.Client _client;
 
-  Future<Map<String, dynamic>> get(String path) => _send('GET', path);
-  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) =>
-      _send('POST', path, body);
+  Future<Map<String, dynamic>> get(
+    String path, {
+    Map<String, String> headers = const {},
+  }) => _send('GET', path, null, headers);
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, dynamic> body, {
+    Map<String, String> headers = const {},
+  }) => _send('POST', path, body, headers);
 
   Future<Map<String, dynamic>> _send(
     String method,
     String path, [
     Map<String, dynamic>? body,
+    Map<String, String> headers = const {},
   ]) async {
     try {
       final request = http.Request(method, Uri.parse('$baseUrl$path'));
+      request.headers.addAll(headers);
       request.headers.addAll({
         'authorization': 'Bearer $token',
         'content-type': 'application/json',

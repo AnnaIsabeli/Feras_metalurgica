@@ -23,6 +23,8 @@ flutter:
   assets:
     - assets/brand/login-background.png
     - assets/brand/fera-mark-source.png
+    - assets/brand/profile-placeholder.png
+    - assets/brand/header-profile.png
   fonts:
     - family: Inter
       fonts:

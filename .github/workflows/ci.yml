@@ -71,6 +71,13 @@ jobs:
       - run: flutter build web
         working-directory: apps/mobile
 
+      - name: Preserve web build for visual verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: orcex-web-${{ github.sha }}
+          path: apps/mobile/build/web
+          retention-days: 3
+
   deploy-dev:
     name: Deploy DEV
     needs: [api, flutter]

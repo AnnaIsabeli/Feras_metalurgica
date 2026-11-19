@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/api_client.dart';
+import 'login_presentation.dart';
 import 'google_button_stub.dart'
     if (dart.library.js_interop) 'google_button_web.dart';
 
@@ -131,66 +132,10 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(
-                Icons.precision_manufacturing_outlined,
-                size: 58,
-                color: Color(0xffff7800),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'ORCEX',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineLarge,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Do pedido ao orçamento.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Entre com sua conta Google para acessar seu atendimento. O acesso da equipe depende das permissões autorizadas.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              if (!ready && error == null || busy)
-                const LinearProgressIndicator(),
-              if (ready && !busy) Center(child: googleButton()),
-              if (error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Text(
-                    error!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 28),
-              const Text(
-                'Não precisa criar uma conta para pedir um orçamento: você também pode continuar o atendimento diretamente com a equipe pelo WhatsApp.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              const SelectableText(
-                'Privacidade: orcex.shop/privacidade.html\nTermos: orcex.shop/termos.html',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
+  Widget build(BuildContext context) => LoginPresentation(
+    ready: ready,
+    busy: busy,
+    error: error,
+    signInButton: ready && !busy ? googleButton() : null,
   );
 }

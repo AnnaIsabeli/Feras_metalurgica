@@ -34,10 +34,11 @@ CREATE TABLE admin_audit_events (
 CREATE INDEX admin_audit_time ON admin_audit_events(created_at DESC,id);
 
 CREATE TABLE access_invitations (
-  email text PRIMARY KEY CHECK (email=lower(email)),
+  email text NOT NULL CHECK (email=lower(email)),
   role text NOT NULL CHECK (role IN ('seller','admin')),
   invited_by uuid REFERENCES admin_accounts(user_id),
   reason text NOT NULL,
+  PRIMARY KEY(email,role),
   expires_at timestamptz NOT NULL,
   accepted_by uuid REFERENCES users(id),
   created_at timestamptz NOT NULL DEFAULT now()

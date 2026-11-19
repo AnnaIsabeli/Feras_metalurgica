@@ -35,7 +35,7 @@ DO $$ BEGIN
 END $$;
 INSERT INTO access_invitations(email,role,reason,expires_at)
  VALUES({email_sql},'admin',{reason_sql},now()+interval '7 days')
- ON CONFLICT(email) DO UPDATE SET role='admin',invited_by=NULL,reason=EXCLUDED.reason,expires_at=EXCLUDED.expires_at,accepted_by=NULL,created_at=now();
+ ON CONFLICT(email,role) DO UPDATE SET role='admin',invited_by=NULL,reason=EXCLUDED.reason,expires_at=EXCLUDED.expires_at,accepted_by=NULL,created_at=now();
 INSERT INTO admin_audit_events(id,target_id,action,reason,after_state)
  SELECT '{uuid.uuid4()}',id,'admin_invited',{reason_sql},jsonb_build_object('email',{email_sql},'role','admin','source','operator_bootstrap') FROM users WHERE lower(email)={email_sql};
 COMMIT;

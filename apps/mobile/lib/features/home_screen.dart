@@ -124,40 +124,10 @@ class HomeScreen extends StatelessWidget {
             style: TextStyle(fontSize: 14, color: Color(0xffa9a39b)),
           ),
           const SizedBox(height: 20),
-          Center(
+          const Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: AspectRatio(
-                  aspectRatio: 353 / 234,
-                  child: LayoutBuilder(
-                    builder: (context, box) => ClipRect(
-                      child: OverflowBox(
-                        alignment: Alignment.topLeft,
-                        minWidth: box.maxWidth,
-                        maxWidth: box.maxWidth,
-                        minHeight: box.maxHeight * 2.3267,
-                        maxHeight: box.maxHeight * 2.3267,
-                        child: Transform.translate(
-                          offset: Offset(
-                            box.maxWidth * .0011,
-                            -box.maxHeight * .8474,
-                          ),
-                          child: Image.asset(
-                            'assets/brand/project-feature.png',
-                            fit: BoxFit.fill,
-                            width: box.maxWidth,
-                            height: box.maxHeight * 2.3267,
-                            semanticLabel:
-                                'Mesa da Fera Metalúrgica com estrutura metálica e tampo de madeira',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              constraints: BoxConstraints(maxWidth: 600),
+              child: ProjectCarousel(),
             ),
           ),
           const SizedBox(height: 20),
@@ -209,5 +179,125 @@ class _QuickAction extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+class ProjectCarousel extends StatefulWidget {
+  const ProjectCarousel({super.key});
+  @override
+  State<ProjectCarousel> createState() => _ProjectCarouselState();
+}
+
+class _ProjectCarouselState extends State<ProjectCarousel> {
+  final _controller = PageController();
+  int _page = 0;
+  static const _labels = [
+    'Mesa com estrutura metálica e tampo de madeira',
+    'Suportes metálicos para plantas',
+    'Mesa e estante com estrutura metálica',
+  ];
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _go(int page) => _controller.animateToPage(
+    page,
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 300),
+    curve: Curves.easeOutCubic,
+  );
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: AspectRatio(
+          aspectRatio: 1.5,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: _labels.length,
+            onPageChanged: (page) => setState(() => _page = page),
+            itemBuilder: (context, index) => Semantics(
+              label: '${_labels[index]}. Imagem ${index + 1} de 3.',
+              image: true,
+              child: ExcludeSemantics(
+                child: LayoutBuilder(
+                  builder: (context, box) {
+                    final imageHeight = box.maxWidth * 1844 / 853;
+                    final fraction = [2 / 3, 0.0, 1 / 3][index];
+                    return ClipRect(
+                      child: OverflowBox(
+                        alignment: Alignment.topCenter,
+                        minHeight: imageHeight,
+                        maxHeight: imageHeight,
+                        child: Transform.translate(
+                          offset: Offset(0, -imageHeight * fraction),
+                          child: Image.asset(
+                            'assets/brand/login-background.png',
+                            width: box.maxWidth,
+                            height: imageHeight,
+                            fit: BoxFit.fill,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          IconButton(
+            tooltip: 'Imagem anterior',
+            onPressed: _page == 0 ? null : () => _go(_page - 1),
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Expanded(
+            child: Text(
+              _labels[_page],
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Color(0xffc4bdb4)),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Próxima imagem',
+            onPressed: _page == 2 ? null : () => _go(_page + 1),
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (var i = 0; i < _labels.length; i++)
+            Semantics(
+              selected: i == _page,
+              child: IconButton(
+                tooltip: 'Ver imagem ${i + 1}',
+                onPressed: () => _go(i),
+                icon: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: i == _page ? 20 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: i == _page
+                        ? const Color(0xffff8a34)
+                        : const Color(0xff77716b),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ],
   );
 }

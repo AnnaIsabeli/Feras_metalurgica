@@ -18,25 +18,7 @@ class FeraApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Fera Metalúrgica',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xffff7800),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xff363431),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xffff7800),
-          foregroundColor: Colors.black,
-          minimumSize: const Size(0, 48),
-        ),
-      ),
-    ),
+    theme: orcexDarkTheme(),
     locale: const Locale('pt', 'BR'),
     supportedLocales: const [Locale('pt', 'BR')],
     localizationsDelegates: const [
@@ -186,7 +168,7 @@ class _AppShellState extends State<AppShell> {
       ),
       1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
       _ => Theme(
-        data: orcexTheme(),
+        data: orcexDarkTheme(),
         child: AccountScreen(
           api: api,
           demonstration: widget.token == null,

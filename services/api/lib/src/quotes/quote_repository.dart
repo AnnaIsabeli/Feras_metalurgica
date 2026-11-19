@@ -15,5 +15,6 @@ abstract interface class QuoteRepository {
     required String expected,
     required String target,
     required String actorId,
+    required String expectedPricingId,
   });
 }

@@ -108,6 +108,13 @@ Handler buildHandler({
     });
 
   if (pricings != null) {
+    router.post('/v1/quotes', (Request request) async {
+      final user = await actor(request);
+      return jsonResponse(
+        201,
+        await pricings.createQuote(user, await readJson(request), quotes),
+      );
+    });
     router.get(
       '/v1/materials',
       (Request request) async => jsonResponse(200, {

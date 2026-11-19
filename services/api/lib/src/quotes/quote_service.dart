@@ -21,7 +21,14 @@ class QuoteService {
     );
   }
 
-  Future<QuoteRequest> create(Principal actor, Map<String, dynamic> data) {
+  Future<QuoteRequest> create(Principal actor, Map<String, dynamic> data) =>
+      repository.create(prepare(actor, data));
+
+  QuoteRequest prepare(
+    Principal actor,
+    Map<String, dynamic> data, {
+    String? id,
+  }) {
     final seller = actor.role == UserRole.seller;
     if (seller && !actor.sellerApproved) {
       throw const ApiError(
@@ -64,22 +71,20 @@ class QuoteService {
       );
     }
     // Ownership and initial status always come from the server, never from input.
-    return repository.create(
-      QuoteRequest(
-        id: const Uuid().v4(),
-        buyerId: seller ? null : actor.id,
-        createdBy: actor.id,
-        customerName: customerName is String ? customerName.trim() : null,
-        customerContact:
-            customerContact is String && customerContact.trim().isNotEmpty
-            ? customerContact.trim()
-            : null,
-        product: product.trim(),
-        description: description.trim(),
-        quantity: quantity,
-        status: RequestStatus.received,
-        createdAt: DateTime.now().toUtc(),
-      ),
+    return QuoteRequest(
+      id: id ?? const Uuid().v4(),
+      buyerId: seller ? null : actor.id,
+      createdBy: actor.id,
+      customerName: customerName is String ? customerName.trim() : null,
+      customerContact:
+          customerContact is String && customerContact.trim().isNotEmpty
+          ? customerContact.trim()
+          : null,
+      product: product.trim(),
+      description: description.trim(),
+      quantity: quantity,
+      status: RequestStatus.received,
+      createdAt: DateTime.now().toUtc(),
     );
   }
 }

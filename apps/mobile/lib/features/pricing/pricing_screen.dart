@@ -1,3 +1,4 @@
+import 'package:uuid/uuid.dart';
 import 'package:fera_contracts/fera_contracts.dart';
 import 'package:flutter/material.dart';
 
@@ -87,20 +88,30 @@ class PricingScreen extends StatefulWidget {
     super.key,
     required this.api,
     this.request,
+    this.onSaved,
     this.pdfActions = const SystemQuotePdfActions(),
   });
   final QuotePdfActions pdfActions;
   final ApiClient api;
 
-  /// Solicitação que está sendo precificada. Nula na simulação avulsa
-  /// (nesse caso não há o que salvar).
+  /// Existing quote; null starts the unified creation form.
   final QuoteRequest? request;
+  final Future<void> Function()? onSaved;
   @override
   State<PricingScreen> createState() => _PricingScreenState();
 }
 
 class _PricingScreenState extends State<PricingScreen> {
   final _form = GlobalKey<FormState>();
+  QuoteRequest? _createdRequest;
+  QuoteRequest? get _request => _createdRequest ?? widget.request;
+  final _creationId = const Uuid().v4();
+  final _customerName = TextEditingController();
+  final _customerContact = TextEditingController();
+  final _quoteProduct = TextEditingController();
+  final _quoteDescription = TextEditingController();
+  final _quoteQuantity = TextEditingController(text: '1');
+
   final _costs = [_CostFields()];
   final _rates = {
     for (final key in pricingRates.keys) key: TextEditingController(text: '0'),
@@ -120,8 +131,9 @@ class _PricingScreenState extends State<PricingScreen> {
   bool _busy = false;
   bool _saving = false;
 
-  String? get _product => widget.request?.product;
-  int get _quantity => widget.request?.quantity ?? 1;
+  String? get _product => _request?.product;
+  int get _quantity =>
+      _request?.quantity ?? int.tryParse(_quoteQuantity.text) ?? 1;
 
   @override
   void initState() {
@@ -137,6 +149,11 @@ class _PricingScreenState extends State<PricingScreen> {
     for (final rate in _rates.values) {
       rate.dispose();
     }
+    _customerName.dispose();
+    _customerContact.dispose();
+    _quoteProduct.dispose();
+    _quoteDescription.dispose();
+    _quoteQuantity.dispose();
     _practiced.dispose();
     _deliveryLeadTime.dispose();
     super.dispose();
@@ -159,7 +176,7 @@ class _PricingScreenState extends State<PricingScreen> {
 
   Future<void> _load() async {
     try {
-      final requestId = widget.request?.id;
+      final requestId = _request?.id;
       final responses = await Future.wait<Map<String, dynamic>?>([
         widget.api.get('/v1/materials'),
         if (requestId != null) _latestPricing(requestId),
@@ -252,7 +269,7 @@ class _PricingScreenState extends State<PricingScreen> {
   }
 
   Future<void> _exportPdf({required bool download}) async {
-    final request = widget.request;
+    final request = _request;
     final revision = _savedPricingId;
     if (request == null || revision == null || _dirty || _busy || _exportingPdf)
       return;
@@ -343,7 +360,7 @@ class _PricingScreenState extends State<PricingScreen> {
   double? get _practicedPrice =>
       _practiced.text.trim().isEmpty ? null : parseDecimal(_practiced.text);
 
-  /// Simulação: o servidor calcula, nada é salvo.
+  /// Preview the values within this quote before saving.
   Future<void> _calculate() async {
     if (_busy || _exportingPdf || !_validate()) return;
     setState(() {
@@ -377,9 +394,31 @@ class _PricingScreenState extends State<PricingScreen> {
   }
 
   /// O servidor calcula de novo, grava no PostgreSQL e devolve o resultado.
+  Map<String, dynamic> get _pricingInput => {
+    'costs': [
+      for (final cost in _costs)
+        if (cost.material case final material?)
+          {
+            'materialId': material.id,
+            'quantity': parseDecimal(cost.quantity.text),
+          }
+        else
+          {
+            'name': cost.name.text.trim(),
+            'unit': cost.unit.text.trim(),
+            'quantity': parseDecimal(cost.quantity.text),
+            'unitCost': parseDecimal(cost.unitCost.text),
+          },
+    ],
+    'rates': _ratesBody,
+    'practicedPrice': ?_practicedPrice,
+    'deliveryLeadTime': _deliveryLeadTime.text.trim().isEmpty
+        ? null
+        : _deliveryLeadTime.text.trim(),
+  };
+
   Future<void> _save() async {
-    final request = widget.request;
-    if (request == null || _busy || _exportingPdf || !_validate()) return;
+    if (_busy || _exportingPdf || !_validate()) return;
     setState(() {
       _busy = true;
       _saving = true;
@@ -387,50 +426,96 @@ class _PricingScreenState extends State<PricingScreen> {
       _notice = null;
       _result = null;
     });
-    final practiced = _practicedPrice;
     try {
-      final saved = await widget.api.post(
-        '/v1/quote-requests/${request.id}/pricing',
-        {
-          'costs': [
-            for (final cost in _costs)
-              if (cost.material case final material?)
-                // Do catálogo: só o id e a quantidade; nome, unidade e
-                // custo o servidor busca por conta própria.
-                {
-                  'materialId': material.id,
-                  'quantity': parseDecimal(cost.quantity.text),
-                }
-              else
-                {
-                  'name': cost.name.text.trim(),
-                  'unit': cost.unit.text.trim(),
-                  'quantity': parseDecimal(cost.quantity.text),
-                  'unitCost': parseDecimal(cost.unitCost.text),
-                },
-          ],
-          'rates': _ratesBody,
-          'practicedPrice': ?practiced,
-          'deliveryLeadTime': _deliveryLeadTime.text.trim().isEmpty
-              ? null
-              : _deliveryLeadTime.text.trim(),
-        },
-      );
+      final request = _request;
+      final saved = request == null
+          ? await widget.api.post('/v1/quotes', {
+              'idempotencyKey': _creationId,
+              'customerName': _customerName.text.trim(),
+              'customerContact': _customerContact.text.trim().isEmpty
+                  ? null
+                  : _customerContact.text.trim(),
+              'product': _quoteProduct.text.trim(),
+              'description': _quoteDescription.text.trim(),
+              'quantity': int.parse(_quoteQuantity.text),
+              'pricing': _pricingInput,
+            })
+          : await widget.api.post(
+              '/v1/quote-requests/${request.id}/pricing',
+              _pricingInput,
+            );
       if (!mounted) return;
       setState(() {
+        if (saved['quote'] is Map<String, dynamic>)
+          _createdRequest = QuoteRequest.fromJson(
+            saved['quote'] as Map<String, dynamic>,
+          );
         _result = saved['result'] as Map<String, dynamic>?;
         _savedPricingId = saved['id'] as String?;
         _dirty = false;
         _savedAt = DateTime.tryParse(saved['createdAt'] as String? ?? '');
         _notice =
-            'Precificação salva. Ela continuará aqui quando você reabrir esta solicitação.';
+            'Orçamento salvo e aguardando aprovação. O PDF já está disponível abaixo.';
       });
+      await widget.onSaved?.call();
     } catch (e) {
       if (mounted) setState(() => _error = _message(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  Widget _customerFields() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      TextFormField(
+        controller: _customerName,
+        maxLength: 120,
+        decoration: const InputDecoration(labelText: 'Nome do cliente'),
+        validator: (v) =>
+            v == null || v.trim().isEmpty ? 'Informe o cliente.' : null,
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _customerContact,
+        maxLength: 120,
+        decoration: const InputDecoration(
+          labelText: 'Contato do cliente (opcional)',
+        ),
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _quoteProduct,
+        maxLength: 120,
+        decoration: const InputDecoration(labelText: 'Produto ou serviço'),
+        validator: (v) =>
+            v == null || v.trim().isEmpty ? 'Informe o produto.' : null,
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _quoteDescription,
+        maxLength: 4000,
+        minLines: 2,
+        maxLines: 5,
+        decoration: const InputDecoration(labelText: 'Descrição do orçamento'),
+        validator: (v) =>
+            v == null || v.trim().isEmpty ? 'Descreva o orçamento.' : null,
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _quoteQuantity,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: 'Quantidade de produtos'),
+        validator: (v) {
+          final n = int.tryParse(v ?? '');
+          return n == null || n < 1 || n > 10000
+              ? 'Informe de 1 a 10000 unidades.'
+              : null;
+        },
+      ),
+      const SizedBox(height: 24),
+    ],
+  );
 
   Widget _decimal(
     TextEditingController controller,
@@ -673,7 +758,7 @@ class _PricingScreenState extends State<PricingScreen> {
   );
 
   Widget _content() {
-    final request = widget.request;
+    final request = _request;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 900),
@@ -686,10 +771,11 @@ class _PricingScreenState extends State<PricingScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  _product ?? 'Simulação de preço',
+                  _product ?? 'Criar orçamento',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
+                if (request == null) _customerFields(),
                 if (request != null) ...[
                   _requestCard(request),
                   const SizedBox(height: 8),
@@ -700,8 +786,8 @@ class _PricingScreenState extends State<PricingScreen> {
                 const SizedBox(height: 8),
                 Text(
                   request == null
-                      ? 'Simulação avulsa: nada é salvo.'
-                      : 'Calcular é só uma simulação. Use Salvar para guardar a precificação desta solicitação; isso não envia proposta ao comprador.',
+                      ? 'Complete o atendimento e a composição. Ao salvar, o orçamento e seus valores são registrados juntos.'
+                      : 'A composição pertence a este orçamento. Salve para atualizar os valores e liberar o PDF.',
                 ),
                 if (_savedAt != null) ...[
                   const SizedBox(height: 8),
@@ -837,24 +923,19 @@ class _PricingScreenState extends State<PricingScreen> {
                         _busy && !_saving ? 'Calculando…' : 'Calcular preço',
                       ),
                     ),
-                    if (request != null)
-                      FilledButton.tonalIcon(
-                        onPressed: _busy || _exportingPdf ? null : _save,
-                        icon: _busy && _saving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(
-                          _busy && _saving
-                              ? 'Salvando…'
-                              : 'Salvar precificação',
-                        ),
+                    FilledButton.tonalIcon(
+                      onPressed: _busy || _exportingPdf ? null : _save,
+                      icon: _busy && _saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save_outlined),
+                      label: Text(
+                        _busy && _saving ? 'Salvando…' : 'Salvar orçamento',
                       ),
+                    ),
                   ],
                 ),
                 if (request != null) ...[

@@ -144,7 +144,9 @@ Future<void> openScreen(
   // Troca a tela inteira para garantir um estado novo (como "fechar e abrir").
   await tester.pumpWidget(const SizedBox());
   await tester.pumpWidget(
-    MaterialApp(home: PricingScreen(api: api, request: forRequest)),
+    MaterialApp(
+      home: PricingScreen(api: api, request: forRequest),
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -187,10 +189,7 @@ void main() {
       findsOneWidget,
     );
     expect(server.calls, contains('GET /v1/materials'));
-    expect(
-      server.calls,
-      contains('GET /v1/quote-requests/$requestId/pricing'),
-    );
+    expect(server.calls, contains('GET /v1/quote-requests/$requestId/pricing'));
     expect(tester.takeException(), isNull);
   });
 
@@ -224,7 +223,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Quantidade (m)'),
       '2',
     );
-    await tapButton(tester, 'Salvar precificação');
+    await tapButton(tester, 'Salvar orçamento');
 
     final sent = server.bodies['POST /v1/quote-requests/$requestId/pricing']!;
     final cost = sent['costs'][0] as Map<String, dynamic>;
@@ -232,7 +231,7 @@ void main() {
     expect(cost['quantity'], 2);
     expect(cost.containsKey('unitCost'), isFalse); // o servidor decide o custo
     expect(sent['rates']['targetNetMarginRate'], 0);
-    expect(find.textContaining('Precificação salva.'), findsOneWidget);
+    expect(find.textContaining('Orçamento salvo'), findsOneWidget);
     expect(find.text('Preço sugerido'), findsOneWidget);
 
     // Fecha e abre de novo: precisa continuar lá.
@@ -262,9 +261,9 @@ void main() {
       find.widgetWithText(TextFormField, 'Custo por unidade (R\$)'),
       '12,50',
     );
-    await tapButton(tester, 'Salvar precificação');
-    final cost =
-        server.bodies['POST /v1/quote-requests/$requestId/pricing']!['costs'][0];
+    await tapButton(tester, 'Salvar orçamento');
+    final cost = server
+        .bodies['POST /v1/quote-requests/$requestId/pricing']!['costs'][0];
     expect(cost['name'], 'Eletrodo');
     expect(cost['unit'], 'kg');
     expect(cost['quantity'], 1);
@@ -281,7 +280,7 @@ void main() {
       find.widgetWithText(TextFormField, 'Quantidade (m)'),
       '0',
     );
-    await tapButton(tester, 'Salvar precificação');
+    await tapButton(tester, 'Salvar orçamento');
     expect(find.text('A quantidade deve ser maior que zero.'), findsOneWidget);
     expect(server.calls.where((c) => c.startsWith('POST')), isEmpty);
     expect(tester.takeException(), isNull);
@@ -313,11 +312,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('standalone simulation has no save button', (tester) async {
+  testWidgets('new quote requires customer details and exposes saving', (
+    tester,
+  ) async {
     final server = FakeApi();
     await openScreen(tester, server);
     expect(find.text('Calcular preço'), findsOneWidget);
-    expect(find.text('Salvar precificação'), findsNothing);
+    expect(find.text('Salvar orçamento'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextFormField, 'Nome do cliente'),
+      findsOneWidget,
+    );
     expect(server.calls, ['GET /v1/materials']);
     expect(tester.takeException(), isNull);
   });

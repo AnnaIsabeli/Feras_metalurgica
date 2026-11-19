@@ -18,7 +18,7 @@ class PostgresQuoteDocumentRepository implements QuoteDocumentRepository {
         ORDER BY created_at DESC, id DESC LIMIT 1
       )
       SELECT q.id AS request_id, q.product, q.description, q.quantity,
-        u.display_name AS customer_name, u.email AS customer_email,
+        COALESCE(q.customer_name,u.display_name) AS customer_name, COALESCE(q.customer_contact,u.email,'') AS customer_email,
         p.id AS pricing_id, p.created_at AS saved_at, p.total_price_cents,
         CASE WHEN jsonb_typeof(p.calculation_snapshot->'input'->'deliveryLeadTime')='string'
           THEN p.calculation_snapshot->'input'->>'deliveryLeadTime' END AS delivery_lead_time,
@@ -26,7 +26,7 @@ class PostgresQuoteDocumentRepository implements QuoteDocumentRepository {
           'name', i.material_name_snapshot, 'unit', i.unit_snapshot, 'quantity', i.quantity
         ) ORDER BY i.material_name_snapshot, i.unit_snapshot, i.id)
           FROM quote_pricing_items i WHERE i.quote_pricing_id=p.id), '[]'::jsonb) AS items
-      FROM quote_requests q JOIN users u ON u.id=q.buyer_id
+      FROM quote_requests q LEFT JOIN users u ON u.id=q.buyer_id
       JOIN chosen p ON p.quote_request_id=q.id
     '''),
       parameters: {'request': requestId, 'pricing': ?pricingId},

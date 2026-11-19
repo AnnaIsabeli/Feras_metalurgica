@@ -174,7 +174,7 @@ void main() {
             .onPressed,
         isNull,
       );
-      await press(tester, find.text('Salvar precificação'));
+      await press(tester, find.text('Salvar orçamento'));
       expect(server.posted!['deliveryLeadTime'], '30 dias úteis');
       expect(
         tester

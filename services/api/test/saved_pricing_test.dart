@@ -1,3 +1,4 @@
+import 'package:fera_contracts/fera_contracts.dart';
 import 'dart:convert';
 import 'package:fera_api/src/auth/principal.dart';
 import 'package:fera_api/src/http/app.dart';
@@ -46,6 +47,7 @@ class MemoryPricings implements PricingRepository {
     required Map<String, dynamic> input,
     required Map<String, dynamic> result,
     required int totalPriceCents,
+    QuoteRequest? newRequest,
   }) async {
     if (!exists) return null;
     return saved = {

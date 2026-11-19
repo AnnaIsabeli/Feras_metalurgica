@@ -1,3 +1,6 @@
+import 'package:fera_contracts/fera_contracts.dart';
+import '../core/api_error.dart';
+import 'postgres_quote_repository.dart';
 import 'dart:convert';
 import 'package:postgres/postgres.dart';
 import '../quotes/pricing_repository.dart';
@@ -65,13 +68,88 @@ class PostgresPricingRepository implements PricingRepository {
     required Map<String, dynamic> input,
     required Map<String, dynamic> result,
     required int totalPriceCents,
+    QuoteRequest? newRequest,
   }) => pool.runTx((session) async {
+    if (newRequest != null) {
+      await session.execute(
+        Sql.named('''
+        INSERT INTO quote_requests (id,buyer_id,created_by,customer_name,customer_contact,product,description,quantity,status,created_at)
+        VALUES (@id,NULL,@actor,@name,@contact,@product,@description,@quantity,'pending',clock_timestamp())
+        ON CONFLICT (id) DO NOTHING
+      '''),
+        parameters: {
+          'id': requestId,
+          'actor': actorId,
+          'name': newRequest.customerName,
+          'contact': newRequest.customerContact,
+          'product': newRequest.product,
+          'description': newRequest.description,
+          'quantity': newRequest.quantity,
+        },
+      );
+    }
     // Serialize revisions of one request and prevent deletion during save.
     final request = await session.execute(
-      Sql.named('SELECT id FROM quote_requests WHERE id=@id FOR UPDATE'),
+      Sql.named('SELECT * FROM quote_requests WHERE id=@id FOR UPDATE'),
       parameters: {'id': requestId},
     );
     if (request.isEmpty) return null;
+    final quote = request.single.toColumnMap();
+    if (totalPriceCents > 9007199254740991 ~/ (quote['quantity'] as int)) {
+      throw const ApiError(
+        422,
+        'quote_total_limit',
+        'O valor total do orçamento excede o limite.',
+      );
+    }
+    if (newRequest != null) {
+      if (quote['created_by'] != actorId ||
+          quote['customer_name'] != newRequest.customerName ||
+          quote['customer_contact'] != newRequest.customerContact ||
+          quote['product'] != newRequest.product ||
+          quote['description'] != newRequest.description ||
+          quote['quantity'] != newRequest.quantity) {
+        throw const ApiError(
+          409,
+          'creation_key_conflict',
+          'Esta tentativa já foi usada. Reabra o orçamento ou inicie outro.',
+        );
+      }
+      final prior = await session.execute(
+        Sql.named('''
+        SELECT *, calculation_snapshot->'input' = CAST(@input AS jsonb) AS same_input
+        FROM quote_pricings WHERE quote_request_id=@id ORDER BY created_at DESC,id DESC LIMIT 1
+      '''),
+        parameters: {'id': requestId, 'input': jsonEncode(input)},
+      );
+      if (prior.isNotEmpty) {
+        final previous = prior.single.toColumnMap();
+        if (previous['same_input'] != true) {
+          throw const ApiError(
+            409,
+            'creation_key_conflict',
+            'Este orçamento já foi salvo com outros valores. Reabra-o antes de alterar.',
+          );
+        }
+        return {
+          ..._saved(previous),
+          'quote': PostgresQuoteRepository.mapRow(quote).toJson(),
+        };
+      }
+    }
+    if ([
+      'approved',
+      'inProduction',
+      'completed',
+      'cancelled',
+    ].contains(quote['status'])) {
+      throw const ApiError(
+        409,
+        'quote_locked',
+        'Este orçamento não permite alterar valores no status atual.',
+      );
+    }
+
     final rows = await session.execute(
       Sql.named(
         'INSERT INTO quote_pricings '
@@ -106,6 +184,17 @@ class PostgresPricingRepository implements PricingRepository {
         },
       );
     }
-    return _saved(row);
+    await session.execute(
+      Sql.named("UPDATE quote_requests SET status='pending' WHERE id=@id"),
+      parameters: {'id': requestId},
+    );
+    return {
+      ..._saved(row),
+      if (newRequest != null)
+        'quote': {
+          ...PostgresQuoteRepository.mapRow(quote).toJson(),
+          'status': 'pending',
+        },
+    };
   });
 }

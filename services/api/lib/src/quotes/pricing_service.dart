@@ -1,3 +1,5 @@
+import 'package:fera_contracts/fera_contracts.dart';
+import 'quote_service.dart';
 import 'dart:convert';
 import '../auth/principal.dart';
 import '../core/api_error.dart';
@@ -49,8 +51,9 @@ class PricingService {
   Future<Map<String, dynamic>> save(
     Principal actor,
     String id,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    QuoteRequest? newRequest,
+  }) async {
     authorize(actor);
     requestId(id);
     // Copy input to ensure normalization never mutates the caller's object.
@@ -143,6 +146,7 @@ class PricingService {
       input: input,
       result: result,
       totalPriceCents: cents.round(),
+      newRequest: newRequest,
     );
     if (saved == null) {
       throw const ApiError(
@@ -152,6 +156,31 @@ class PricingService {
       );
     }
     return saved;
+  }
+
+  Future<Map<String, dynamic>> createQuote(
+    Principal actor,
+    Map<String, dynamic> data,
+    QuoteService quotes,
+  ) async {
+    authorize(actor);
+    final key = data['idempotencyKey'];
+    if (key is! String ||
+        !uuid.hasMatch(key) ||
+        data['pricing'] is! Map<String, dynamic>) {
+      throw const ApiError(
+        422,
+        'invalid_quote',
+        'Informe os dados e a composição completa do orçamento.',
+      );
+    }
+    final request = quotes.prepare(actor, data, id: key);
+    return save(
+      actor,
+      request.id,
+      data['pricing'] as Map<String, dynamic>,
+      newRequest: request,
+    );
   }
 
   bool _decimal(

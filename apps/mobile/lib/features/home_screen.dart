@@ -186,9 +186,9 @@ class _QuickAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
+        child: LayoutBuilder(
+          builder: (context, bounds) {
+            final icon = Container(
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
@@ -196,19 +196,25 @@ class _QuickAction extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Center(child: SvgPicture.asset(asset)),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+            );
+            final text = Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            );
+            return bounds.maxWidth < 140
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [icon, const SizedBox(height: 8), text],
+                  )
+                : Row(
+                    children: [
+                      icon,
+                      const SizedBox(width: 8),
+                      Expanded(child: text),
+                    ],
+                  );
+          },
         ),
       ),
     ),

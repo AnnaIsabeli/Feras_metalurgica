@@ -1,6 +1,7 @@
 import 'package:fera_mobile/features/home_screen.dart';
 import 'package:fera_mobile/features/quotes/quote_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'quote_view_model_test.dart' show FakeQuotes;
 
@@ -33,6 +34,20 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        for (final label in ['Criar orçamento', 'Visualizar orçamentos']) {
+          final wordStart = label.indexOf('orçamento');
+          final paragraph = tester.renderObject<RenderParagraph>(
+            find.text(label),
+          );
+          expect(
+            paragraph.getBoxesForSelection(
+              TextSelection(baseOffset: wordStart, extentOffset: label.length),
+            ),
+            hasLength(1),
+            reason: 'Do not split the word orçamento across lines',
+          );
+        }
+
         final scroll = tester.getRect(find.byKey(const Key('homeScroll')));
         expect(scroll.width, size.width);
         if (size.width >= 1000) {

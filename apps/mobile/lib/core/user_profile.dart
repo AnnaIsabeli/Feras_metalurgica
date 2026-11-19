@@ -40,6 +40,7 @@ class ProfileAvatar extends StatelessWidget {
               ? fallback
               : Image.network(
                   profile!.avatarUrl!,
+                  webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
                   width: size,
                   height: size,
                   fit: BoxFit.cover,

@@ -4,9 +4,11 @@ import 'package:fera_api/src/http/app.dart';
 import 'package:fera_api/src/quotes/pricing_repository.dart';
 import 'package:fera_api/src/quotes/pricing_service.dart';
 import 'package:fera_api/src/quotes/quote_service.dart';
+import 'package:fera_api/src/materials/material_service.dart';
+import 'support/memory_repositories.dart' show MemoryMaterials;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
-import 'app_test.dart' show MemoryQuotes;
+import 'support/memory_repositories.dart' show MemoryQuotes;
 
 const requestId = '00000000-0000-4000-8000-000000000088';
 const materialId = '00000000-0000-4000-8000-000000000077';
@@ -66,6 +68,7 @@ void main() {
     repository = MemoryPricings();
     handler = buildHandler(
       quotes: QuoteService(MemoryQuotes()),
+      materials: MaterialService(MemoryMaterials()),
       pricings: PricingService(repository),
       identity: DevelopmentIdentityVerifier(),
       checkDatabase: () async {},

@@ -20,6 +20,15 @@ class PostgresQuoteRepository implements QuoteRepository {
   }
 
   @override
+  Future<QuoteRequest?> find(String id) async {
+    final result = await pool.execute(
+      Sql.named('SELECT * FROM quote_requests WHERE id = @id'),
+      parameters: {'id': id},
+    );
+    return result.isEmpty ? null : _map(result.first.toColumnMap());
+  }
+
+  @override
   Future<QuoteRequest> create(QuoteRequest request) async {
     final result = await pool.execute(
       Sql.named('''

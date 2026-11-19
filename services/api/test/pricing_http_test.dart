@@ -2,13 +2,16 @@ import 'dart:convert';
 import 'package:fera_api/src/auth/principal.dart';
 import 'package:fera_api/src/http/app.dart';
 import 'package:fera_api/src/quotes/quote_service.dart';
+import 'package:fera_api/src/materials/material_service.dart';
+import 'support/memory_repositories.dart' show MemoryMaterials;
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
-import 'app_test.dart' show MemoryQuotes;
+import 'support/memory_repositories.dart' show MemoryQuotes;
 
 void main() {
   final handler = buildHandler(
     quotes: QuoteService(MemoryQuotes()),
+    materials: MaterialService(MemoryMaterials()),
     identity: DevelopmentIdentityVerifier(),
     checkDatabase: () async {},
     allowedOrigin: 'http://localhost:5000, https://demo.example.com',

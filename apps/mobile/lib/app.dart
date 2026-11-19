@@ -2,6 +2,10 @@ import 'features/auth/google_login_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'core/session.dart';
+import 'features/materials/material_repository.dart';
+import 'features/materials/material_screen.dart';
+import 'features/materials/material_view_model.dart';
 import 'features/pricing/pricing_screen.dart';
 import 'features/account_screen.dart';
 import 'features/quotes/quote_repository.dart';
@@ -75,13 +79,23 @@ class AccessScreen extends StatelessWidget {
                     if (_demo) ...[
                       const SizedBox(height: 24),
                       FilledButton(
-                        onPressed: () => _open(context, false),
-                        child: const Text('Demonstração: comprador'),
+                        onPressed: () => _open(context, 'demo-buyer'),
+                        child: const Text('Demonstração: cliente'),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: () => _open(context, true),
-                        child: const Text('Demonstração: vendedor'),
+                        onPressed: () => _open(context, 'demo-seller'),
+                        child: const Text('Demonstração: vendedor aprovado'),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => _open(context, 'demo-seller-pending'),
+                        child: const Text('Demonstração: vendedor pendente'),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => _open(context, 'demo-admin'),
+                        child: const Text('Demonstração: administrador'),
                       ),
                     ],
                   ],
@@ -90,9 +104,11 @@ class AccessScreen extends StatelessWidget {
             ),
           ),
         );
-  void _open(BuildContext context, bool seller) => Navigator.push(
+  void _open(BuildContext context, String token) => Navigator.push(
     context,
-    MaterialPageRoute<void>(builder: (_) => AppShell(seller: seller)),
+    MaterialPageRoute<void>(
+      builder: (_) => AppShell(seller: token == 'demo-seller', token: token),
+    ),
   );
 }
 
@@ -107,12 +123,17 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   late final ApiClient api;
   late final QuoteViewModel quotes;
+  MaterialViewModel? materials;
+  Session? session;
+  String? sessionError;
+  bool loadingSession = true;
   int index = 0;
+
   @override
   void initState() {
     super.initState();
     api = ApiClient(
-      baseUrl: widget.token != null
+      baseUrl: widget.token != null && !widget.token!.startsWith('demo-')
           ? Uri.base.resolve('/api').toString()
           : const String.fromEnvironment(
               'API_BASE_URL',
@@ -121,127 +142,166 @@ class _AppShellState extends State<AppShell> {
       token: widget.token ?? (widget.seller ? 'demo-seller' : 'demo-buyer'),
     );
     quotes = QuoteViewModel(ApiQuoteRepository(api));
-    quotes.load();
+    _loadSession();
+  }
+
+  Future<void> _loadSession() async {
+    try {
+      final loaded = Session.fromJson(await api.get('/v1/me'));
+      if (!mounted) return;
+      setState(() {
+        session = loaded;
+        materials = loaded.can('readMaterials')
+            ? MaterialViewModel(
+                ApiMaterialRepository(api),
+                canManage: loaded.can('writeMaterials'),
+              )
+            : null;
+        loadingSession = false;
+      });
+      if (loaded.can('listQuotes')) quotes.load();
+      if (loaded.can('readMaterials')) materials?.load();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        sessionError = e.toString();
+        loadingSession = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     quotes.dispose();
+    materials?.dispose();
     api.close();
     super.dispose();
   }
 
-  void select(int value) {
+  List<String> get _tabs {
+    final s = session;
+    if (s == null) return const [];
+    return [
+      'Início',
+      if (s.can('listQuotes')) 'Orçamentos',
+      if (s.can('readMaterials')) (s.can('writeMaterials') ? 'Catálogo' : 'Materiais'),
+      'Conta',
+    ];
+  }
+
+  void _select(int value) {
     setState(() => index = value);
-    if (value == 1) quotes.load();
+    final tab = _tabs[value];
+    if (tab == 'Orçamentos') quotes.load();
+    if (tab == 'Catálogo' || tab == 'Materiais') materials?.load();
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('ORCEX'),
-      actions: [
-        IconButton(
-          onPressed: () => Navigator.pop(context),
-          tooltip: widget.token == null ? 'Sair da demonstração' : 'Sair',
-          icon: const Icon(Icons.logout),
-        ),
-      ],
-    ),
-    body: switch (index) {
-      0 => Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              Text(
-                widget.seller ? 'Olá, vendedor' : 'Olá, comprador',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                widget.seller
-                    ? 'Consulte as solicitações e prepare o preço de cada produto.'
-                    : 'Descreva o que você precisa e acompanhe seus orçamentos.',
-              ),
-              const SizedBox(height: 24),
-              ListenableBuilder(
-                listenable: quotes,
-                builder: (context, _) => Card(
+  Widget build(BuildContext context) {
+    final s = session;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ORCEX'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            tooltip: widget.token == null ? 'Sair da demonstração' : 'Sair',
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: loadingSession
+          ? const Center(child: CircularProgressIndicator())
+          : s == null
+              ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          quotes.loading
-                              ? 'Carregando solicitações…'
-                              : quotes.error != null
-                              ? 'Não foi possível atualizar as solicitações.'
-                              : '${quotes.items.length} solicitações registradas',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: () => select(1),
-                          icon: const Icon(Icons.request_quote_outlined),
-                          label: const Text('Abrir orçamentos'),
-                        ),
+                        Text(sessionError ?? 'Não foi possível identificar o acesso.'),
+                        const SizedBox(height: 16),
+                        FilledButton(onPressed: () { setState(() { loadingSession = true; sessionError = null; }); _loadSession(); }, child: const Text('Tentar novamente')),
                       ],
                     ),
                   ),
-                ),
+                )
+              : _buildBody(s),
+      bottomNavigationBar: s == null || _tabs.length < 2
+          ? null
+          : NavigationBar(
+              selectedIndex: index.clamp(0, _tabs.length - 1).toInt(),
+              onDestinationSelected: _select,
+              destinations: [
+                for (final tab in _tabs)
+                  NavigationDestination(
+                    icon: Icon(switch (tab) {
+                      'Início' => Icons.home_outlined,
+                      'Orçamentos' => Icons.request_quote_outlined,
+                      'Catálogo' || 'Materiais' => Icons.category_outlined,
+                      _ => Icons.account_circle_outlined,
+                    }),
+                    label: tab,
+                  ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildBody(Session s) {
+    final tab = _tabs[index.clamp(0, _tabs.length - 1).toInt()];
+    if (tab == 'Orçamentos') {
+      return QuoteScreen(
+        model: quotes,
+        seller: s.role == 'seller' && s.sellerApproved,
+        api: api,
+        canCreate: s.can('createQuote'),
+        title: s.role == 'admin' ? 'Solicitações' : null,
+      );
+    }
+    if (tab == 'Catálogo' || tab == 'Materiais') {
+      return MaterialScreen(model: materials!);
+    }
+    if (tab == 'Conta') {
+      return AccountScreen(api: api, demonstration: widget.token == null || widget.token!.startsWith('demo-'));
+    }
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900),
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text('Olá, ${s.roleLabel}', style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 12),
+            Text(s.isPendingSeller
+                ? 'Seu acesso de vendedor ainda não foi aprovado.'
+                : switch (s.role) {
+                    'admin' => 'Gerencie o catálogo e acompanhe as solicitações.',
+                    'seller' => 'Consulte materiais ativos e prepare a precificação.',
+                    _ => 'Consulte e acompanhe suas solicitações de orçamento.',
+                  }),
+            if (s.can('listQuotes')) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: () => _select(_tabs.indexOf('Orçamentos')),
+                icon: const Icon(Icons.request_quote_outlined),
+                label: const Text('Abrir orçamentos'),
               ),
-              const SizedBox(height: 20),
+            ],
+            if (s.role == 'seller' && s.sellerApproved) ...[
+              const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => widget.seller
-                        ? PricingScreen(api: api)
-                        : NewQuoteScreen(model: quotes),
-                  ),
+                  MaterialPageRoute<void>(builder: (_) => PricingScreen(api: api)),
                 ),
-                icon: Icon(
-                  widget.seller ? Icons.calculate_outlined : Icons.add,
-                ),
-                label: Text(
-                  widget.seller
-                      ? 'Simular preço de venda'
-                      : 'Solicitar orçamento',
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                widget.seller
-                    ? 'Os cálculos usam os custos e percentuais que você informar. A simulação não envia uma proposta.'
-                    : 'Informe produto, quantidade e os detalhes necessários para o atendimento.',
+                icon: const Icon(Icons.calculate_outlined),
+                label: const Text('Simular preço de venda'),
               ),
             ],
-          ),
+          ],
         ),
       ),
-      1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
-      _ => AccountScreen(api: api, demonstration: widget.token == null),
-    },
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: index,
-      onDestinationSelected: select,
-      destinations: [
-        const NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          label: 'Início',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.request_quote_outlined),
-          label: 'Orçamentos',
-        ),
-        const NavigationDestination(
-          icon: Icon(Icons.account_circle_outlined),
-          label: 'Conta',
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }

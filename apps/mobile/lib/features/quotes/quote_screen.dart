@@ -11,10 +11,14 @@ class QuoteScreen extends StatelessWidget {
     required this.model,
     required this.seller,
     required this.api,
+    this.canCreate,
+    this.title,
   });
   final QuoteViewModel model;
   final bool seller;
   final ApiClient api;
+  final bool? canCreate;
+  final String? title;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -27,7 +31,7 @@ class QuoteScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  seller ? 'Orçamentos' : 'Meus orçamentos',
+                  title ?? (seller ? 'Orçamentos' : 'Meus orçamentos'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
@@ -39,7 +43,7 @@ class QuoteScreen extends StatelessWidget {
             ],
           ),
         ),
-        Padding(
+        if (canCreate ?? true) Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: FilledButton.icon(
             onPressed: () => Navigator.of(context).push(
@@ -263,10 +267,14 @@ class QuoteDetailScreen extends StatelessWidget {
     required this.item,
     required this.seller,
     required this.api,
+    this.canCreate,
+    this.title,
   });
   final QuoteRequest item;
   final bool seller;
   final ApiClient api;
+  final bool? canCreate;
+  final String? title;
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Detalhes do orçamento')),

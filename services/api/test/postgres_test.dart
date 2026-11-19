@@ -1,12 +1,50 @@
 import 'dart:io';
 import 'package:fera_api/src/auth/principal.dart';
 import 'package:fera_api/src/database/postgres_quote_repository.dart';
+import 'package:fera_api/src/database/postgres_material_repository.dart';
+import 'package:fera_api/src/materials/material_service.dart';
 import 'package:fera_api/src/quotes/quote_service.dart';
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
 void main() {
   final url = Platform.environment['TEST_DATABASE_URL'];
+  test(
+    'catalog persists, can be deactivated and is visible only according to profile',
+    () async {
+      final pool = Pool.withUrl(url!);
+      addTearDown(pool.close);
+      final service = MaterialService(PostgresMaterialRepository(pool));
+      const admin = Principal(DevelopmentIdentityVerifier.adminId, UserRole.admin);
+      const seller = Principal(
+        DevelopmentIdentityVerifier.sellerId,
+        UserRole.seller,
+        sellerApproved: true,
+      );
+      final created = await service.create(admin, {
+        'name': 'Material integração ${DateTime.now().microsecondsSinceEpoch}',
+        'unit': 'kg',
+        'unitCost': '12.345678',
+      });
+      addTearDown(() async {
+        await pool.execute(
+          Sql.named('DELETE FROM materials WHERE id = @id'),
+          parameters: {'id': created.id},
+        );
+      });
+      expect((await service.list(seller)).any((m) => m.id == created.id), isTrue);
+      await service.update(admin, created.id, {'active': false});
+      expect((await service.list(seller)).any((m) => m.id == created.id), isFalse);
+      expect(
+        (await service.list(admin, status: 'inactive')).any((m) => m.id == created.id),
+        isTrue,
+      );
+    },
+    skip: url == null
+        ? 'Set TEST_DATABASE_URL with migrations and development seed applied.'
+        : false,
+  );
+
   test(
     'persists request in PostgreSQL and retrieves by buyer',
     () async {

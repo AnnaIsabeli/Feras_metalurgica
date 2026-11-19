@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import '../auth/principal.dart';
+import '../auth/policy.dart';
+import '../materials/material_service.dart';
 import '../core/api_error.dart';
 import '../quotes/quote_service.dart';
 import 'pricing_endpoint.dart';
@@ -15,6 +17,7 @@ Response jsonResponse(int status, Object body) => Response(
 
 Handler buildHandler({
   required QuoteService quotes,
+  required MaterialService materials,
   PricingService? pricings,
   required IdentityVerifier identity,
   required Future<void> Function() checkDatabase,
@@ -80,6 +83,7 @@ Handler buildHandler({
         'id': user.id,
         'role': user.role.name,
         'sellerApproved': user.sellerApproved,
+        'permissions': permissionsFor(user),
       });
     })
     ..get('/v1/quote-requests', (Request request) async {
@@ -87,6 +91,18 @@ Handler buildHandler({
       return jsonResponse(200, {
         'items': items.map((q) => q.toJson()).toList(),
       });
+    })
+    ..get('/v1/quote-requests/<id>', (Request request, String id) async {
+      final quote = await quotes.get(await actor(request), id);
+      return jsonResponse(200, quote.toJson());
+    })
+    ..get('/v1/quote-requests/<id>/pdf', (Request request, String id) async {
+      await quotes.authorizePdf(await actor(request), id);
+      throw const ApiError(
+        501,
+        'not_implemented',
+        'Geração de PDF ainda não implementada.',
+      );
     })
     ..post('/v1/pricing/calculate', (Request request) async {
       final user = await actor(request);
@@ -101,17 +117,35 @@ Handler buildHandler({
     })
     ..post('/v1/quote-requests', (Request request) async {
       final user = await actor(request);
+      authorize(user, Permission.createQuote);
       final data = await readJson(request);
       return jsonResponse(201, (await quotes.create(user, data)).toJson());
+    })
+    ..get('/v1/materials', (Request request) async {
+      final params = request.url.queryParameters;
+      final items = await materials.list(
+        await actor(request),
+        query: params['q'],
+        status: params['status'],
+      );
+      return jsonResponse(200, {'items': items.map((m) => m.toJson()).toList()});
+    })
+    ..get('/v1/materials/<id>', (Request request, String id) async {
+      final item = await materials.get(await actor(request), id);
+      return jsonResponse(200, item.toJson());
+    })
+    ..post('/v1/materials', (Request request) async {
+      final user = await actor(request);
+      authorize(user, Permission.writeMaterials);
+      return jsonResponse(201, (await materials.create(user, await readJson(request))).toJson());
+    })
+    ..patch('/v1/materials/<id>', (Request request, String id) async {
+      final user = await actor(request);
+      authorize(user, Permission.writeMaterials);
+      return jsonResponse(200, (await materials.update(user, id, await readJson(request))).toJson());
     });
 
   if (pricings != null) {
-    router.get(
-      '/v1/materials',
-      (Request request) async => jsonResponse(200, {
-        'items': await pricings.materials(await actor(request)),
-      }),
-    );
     router.get(
       '/v1/quote-requests/<id>/pricing',
       (Request request, String id) async =>
@@ -145,7 +179,7 @@ Handler buildHandler({
     final cors = <String, String>{
       'access-control-allow-origin': ?origin,
       'vary': 'Origin',
-      'access-control-allow-methods': 'GET, POST, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, PATCH, OPTIONS',
       'access-control-allow-headers': 'Authorization, Content-Type',
     };
     Response response;

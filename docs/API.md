@@ -70,3 +70,16 @@ banco não foram alterados por esta implementação.
 
 Login Google, anexos, persistência/envio/aceite de proposta e pedidos continuam
 pendentes. Não há botão que simule sucesso nessas operações.
+
+
+## KAN-11 / KAN-32 — catálogo e autorização
+
+- `GET /v1/me` devolve `id`, `role`, `sellerApproved` e `permissions`.
+- `GET /v1/quote-requests/{id}` consulta solicitação com isolamento do cliente.
+- `GET /v1/quote-requests/{id}/pdf` autentica e autoriza perfil/propriedade; a geração do PDF ainda responde `501` até ser implementada.
+- `GET /v1/materials?q=...&status=active|inactive|all` pesquisa o catálogo. Cliente recebe `403`; vendedor aprovado só pode consultar ativos; administrador pode consultar todos.
+- `GET /v1/materials/{id}` consulta um material conforme o perfil.
+- `POST /v1/materials` cria material (administrador).
+- `PATCH /v1/materials/{id}` edita nome, unidade, custo unitário e/ou `active` (administrador). Não existe exclusão física.
+
+Os custos de orçamento são preservados em `quote_pricing_items` por snapshots de nome, unidade, quantidade e custo unitário; alterações posteriores no catálogo não reescrevem esses snapshots.

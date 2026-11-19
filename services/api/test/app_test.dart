@@ -2,32 +2,23 @@ import 'dart:convert';
 import 'package:fera_api/src/auth/principal.dart';
 import 'package:fera_api/src/core/config.dart';
 import 'package:fera_api/src/http/app.dart';
-import 'package:fera_api/src/quotes/quote_repository.dart';
+import 'package:fera_api/src/materials/material_service.dart';
+import 'support/memory_repositories.dart';
 import 'package:fera_api/src/quotes/quote_service.dart';
 import 'package:fera_contracts/fera_contracts.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-class MemoryQuotes implements QuoteRepository {
-  final items = <QuoteRequest>[];
-  @override
-  Future<QuoteRequest> create(QuoteRequest request) async {
-    items.add(request);
-    return request;
-  }
-
-  @override
-  Future<List<QuoteRequest>> list({String? buyerId}) async =>
-      items.where((q) => buyerId == null || q.buyerId == buyerId).toList();
-}
-
 void main() {
   late MemoryQuotes repository;
+  late MemoryMaterials materialsRepository;
   late Handler handler;
   setUp(() {
     repository = MemoryQuotes();
+    materialsRepository = MemoryMaterials();
     handler = buildHandler(
       quotes: QuoteService(repository),
+      materials: MaterialService(materialsRepository),
       identity: DevelopmentIdentityVerifier(),
       checkDatabase: () async {},
       allowedOrigin: 'http://localhost:5000',
@@ -54,6 +45,31 @@ void main() {
     'description': 'Portão de correr de 3 metros',
     'quantity': 1,
   };
+
+  test('catálogo: só administrador altera e vendedor aprovado consulta ativos', () async {
+    final denied = await handler(request(
+      'POST', '/v1/materials', token: 'demo-seller',
+      body: {'name': 'Aço', 'unit': 'kg', 'unitCost': '12.5'},
+    ));
+    expect(denied.statusCode, 403);
+
+    final buyerDenied = await handler(request('GET', '/v1/materials', token: 'demo-buyer'));
+    expect(buyerDenied.statusCode, 403);
+
+    final created = await handler(request(
+      'POST', '/v1/materials', token: 'demo-admin',
+      body: {'name': 'Aço carbono', 'unit': 'kg', 'unitCost': '12.500000'},
+    ));
+    expect(created.statusCode, 201);
+
+    final sellerRead = await handler(request('GET', '/v1/materials', token: 'demo-seller'));
+    expect(sellerRead.statusCode, 200);
+    final invalid = await handler(request(
+      'POST', '/v1/materials', token: 'demo-admin',
+      body: {'name': ' ', 'unit': 'kg', 'unitCost': '-1'},
+    ));
+    expect(invalid.statusCode, 422);
+  });
 
   test('health is public but quote requests require authentication', () async {
     expect((await handler(request('GET', '/health'))).statusCode, 200);
@@ -248,6 +264,7 @@ void main() {
     () async {
       final app = buildHandler(
         quotes: QuoteService(repository),
+        materials: MaterialService(materialsRepository),
         identity: DenyAllIdentityVerifier(),
         checkDatabase: () async =>
             throw StateError('private connection details'),

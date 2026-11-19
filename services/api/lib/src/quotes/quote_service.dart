@@ -1,6 +1,8 @@
 import 'package:fera_contracts/fera_contracts.dart';
 import 'package:uuid/uuid.dart';
 import '../auth/principal.dart';
+import '../auth/policy.dart';
+import '../core/validation.dart';
 import '../core/api_error.dart';
 import 'quote_repository.dart';
 
@@ -9,17 +11,30 @@ class QuoteService {
   final QuoteRepository repository;
 
   Future<List<QuoteRequest>> list(Principal actor) {
-    if (actor.role == UserRole.seller && !actor.sellerApproved) {
-      throw const ApiError(
-        403,
-        'seller_not_approved',
-        'Acesso de vendedor não aprovado.',
-      );
-    }
+    authorize(actor, Permission.listQuotes);
     return repository.list(
       buyerId: actor.role == UserRole.buyer ? actor.id : null,
     );
   }
+
+  /// Consulta individual com isolamento por proprietário. IDs inválidos e
+  /// recursos inexistentes não chegam ao PostgreSQL.
+  Future<QuoteRequest> get(
+    Principal actor,
+    String id, {
+    Permission permission = Permission.readQuote,
+  }) async {
+    authorize(actor, permission);
+    final found = isUuid(id) ? await repository.find(id) : null;
+    if (found == null) {
+      throw const ApiError(404, 'not_found', 'Solicitação não encontrada.');
+    }
+    authorize(actor, permission, ownerId: found.buyerId);
+    return found;
+  }
+
+  Future<QuoteRequest> authorizePdf(Principal actor, String id) =>
+      get(actor, id, permission: Permission.downloadQuotePdf);
 
   Future<QuoteRequest> create(Principal actor, Map<String, dynamic> data) {
     final seller = actor.role == UserRole.seller;

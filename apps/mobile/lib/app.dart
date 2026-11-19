@@ -134,6 +134,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
+      automaticallyImplyLeading: false,
       title: const Text('ORCEX'),
       actions: [
         IconButton(
@@ -142,7 +143,30 @@ class _AppShellState extends State<AppShell> {
           icon: ProfileAvatar(profile: widget.profile, size: 32),
         ),
         IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () async {
+            final leave = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Sair da conta?'),
+                content: const Text(
+                  'Você precisará entrar com Google novamente.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Continuar aqui'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Sair'),
+                  ),
+                ],
+              ),
+            );
+            if (leave == true && context.mounted) {
+              Navigator.pop(context);
+            }
+          },
           tooltip: widget.token == null ? 'Sair da demonstração' : 'Sair',
           icon: const Icon(Icons.logout),
         ),

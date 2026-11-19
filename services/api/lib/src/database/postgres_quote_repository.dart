@@ -33,7 +33,7 @@ class PostgresQuoteRepository implements QuoteRepository {
     '''),
       parameters: {
         'buyer': ?buyerId,
-        'customer': escaped == null ? null : '%$escaped%',
+        'customer': ?(escaped == null ? null : '%$escaped%'),
         'from': ?from,
         'to': ?to,
         'status': ?status,

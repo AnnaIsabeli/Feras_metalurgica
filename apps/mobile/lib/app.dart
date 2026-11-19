@@ -18,7 +18,25 @@ class FeraApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Fera Metalúrgica',
     debugShowCheckedModeBanner: false,
-    theme: orcexTheme(),
+    theme: ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xffff7800),
+        brightness: Brightness.dark,
+      ),
+      scaffoldBackgroundColor: const Color(0xff363431),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xffff7800),
+          foregroundColor: Colors.black,
+          minimumSize: const Size(0, 48),
+        ),
+      ),
+    ),
     locale: const Locale('pt', 'BR'),
     supportedLocales: const [Locale('pt', 'BR')],
     localizationsDelegates: const [
@@ -134,16 +152,6 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      automaticallyImplyLeading: false,
-      leadingWidth: 76,
-      leading: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-        child: Image.asset(
-          'assets/brand/header-logo.png',
-          fit: BoxFit.contain,
-          semanticLabel: 'Fera Metalúrgica',
-        ),
-      ),
       title: const Text('ORCEX'),
       actions: [
         IconButton(
@@ -159,25 +167,31 @@ class _AppShellState extends State<AppShell> {
       ],
     ),
     body: switch (index) {
-      0 => HomeScreen(
-        model: quotes,
-        seller: widget.seller,
-        profile: widget.profile,
-        onList: () => select(1),
-        onCreate: () => Navigator.push(
-          context,
-          MaterialPageRoute<void>(
-            builder: (_) => widget.seller
-                ? PricingScreen(api: api, onSaved: quotes.load)
-                : NewQuoteScreen(model: quotes),
+      0 => Theme(
+        data: orcexTheme(),
+        child: HomeScreen(
+          model: quotes,
+          seller: widget.seller,
+          profile: widget.profile,
+          onList: () => select(1),
+          onCreate: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (_) => widget.seller
+                  ? PricingScreen(api: api, onSaved: quotes.load)
+                  : NewQuoteScreen(model: quotes),
+            ),
           ),
         ),
       ),
       1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
-      _ => AccountScreen(
-        api: api,
-        demonstration: widget.token == null,
-        profile: widget.profile,
+      _ => Theme(
+        data: orcexTheme(),
+        child: AccountScreen(
+          api: api,
+          demonstration: widget.token == null,
+          profile: widget.profile,
+        ),
       ),
     },
     bottomNavigationBar: NavigationBar(
@@ -192,8 +206,8 @@ class _AppShellState extends State<AppShell> {
           icon: Icon(Icons.request_quote_outlined),
           label: 'Orçamentos',
         ),
-        NavigationDestination(
-          icon: ProfileAvatar(profile: widget.profile, size: 26),
+        const NavigationDestination(
+          icon: Icon(Icons.account_circle_outlined),
           label: 'Conta',
         ),
       ],

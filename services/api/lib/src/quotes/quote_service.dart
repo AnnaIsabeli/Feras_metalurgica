@@ -1,34 +1,46 @@
 import 'package:fera_contracts/fera_contracts.dart';
 import 'package:uuid/uuid.dart';
+import '../auth/policy.dart';
 import '../auth/principal.dart';
 import '../core/api_error.dart';
+import '../core/validation.dart';
 import 'quote_repository.dart';
 
 class QuoteService {
   QuoteService(this.repository);
   final QuoteRepository repository;
 
-  Future<List<QuoteRequest>> list(Principal actor) {
-    if (actor.role == UserRole.seller && !actor.sellerApproved) {
-      throw const ApiError(
-        403,
-        'seller_not_approved',
-        'Acesso de vendedor não aprovado.',
-      );
-    }
+  Future<List<QuoteRequest>> list(Principal actor) async {
+    authorize(actor, Permission.listQuotes);
     return repository.list(
       buyerId: actor.role == UserRole.buyer ? actor.id : null,
     );
   }
 
-  Future<QuoteRequest> create(Principal actor, Map<String, dynamic> data) {
-    if (actor.role != UserRole.buyer) {
-      throw const ApiError(
-        403,
-        'buyer_required',
-        'Somente compradores criam solicitações.',
-      );
+  /// Busca uma solicitação aplicando perfil e propriedade. Cliente só enxerga
+  /// as suas; solicitação inexistente ou de outro cliente responde 404.
+  Future<QuoteRequest> get(
+    Principal actor,
+    String id, {
+    Permission permission = Permission.readQuote,
+  }) async {
+    authorize(actor, permission);
+    final found = isUuid(id) ? await repository.find(id) : null;
+    if (found == null) {
+      throw const ApiError(404, 'not_found', 'Solicitação não encontrada.');
     }
+    authorize(actor, permission, ownerId: found.buyerId);
+    return found;
+  }
+
+  /// Ponto único de proteção do PDF: autentica, aplica perfil e propriedade.
+  /// A geração do arquivo ainda não existe; quando existir, só roda depois
+  /// desta checagem.
+  Future<QuoteRequest> authorizePdf(Principal actor, String id) =>
+      get(actor, id, permission: Permission.downloadQuotePdf);
+
+  Future<QuoteRequest> create(Principal actor, Map<String, dynamic> data) {
+    authorize(actor, Permission.createQuote);
     final product = data['product'];
     final description = data['description'];
     final quantity = data['quantity'];

@@ -32,7 +32,8 @@ preço oficial nem conecta ao banco. O pacote compartilhado contém apenas contr
 
 ## Dados e módulos
 
-Implementados: `users` e `quote_requests` em `001_initial.sql`.
+Implementados: `users` e `quote_requests` em `001_initial.sql`; `materials`, `quote_pricings` e
+`quote_pricing_items` em `002`; perfil `admin` em `003`.
 
 Planejados em migrações futuras:
 
@@ -53,7 +54,8 @@ arredondamento com a planilha.
 ## Regras
 
 Já implementadas: comprador cria solicitações; dono/estado inicial são definidos no servidor;
-comprador consulta somente seus registros; vendedor precisa de aprovação no serviço.
+cliente consulta somente seus registros; vendedor precisa de aprovação; administrador gerencia o
+catálogo. Toda a matriz está em `auth/policy.dart` (ver `docs/PERMISSIONS.md`).
 As identidades atuais são apenas demonstrativas.
 
 Pendentes: envio exige itens, valor, validade e condições; DTO comercial omite custos e margem;

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
+import '../auth/policy.dart';
 import '../auth/principal.dart';
 import '../core/api_error.dart';
+import '../materials/material_service.dart';
 import '../quotes/quote_service.dart';
-import 'pricing_endpoint.dart';
-import '../quotes/pricing_service.dart';
 
 Response jsonResponse(int status, Object body) => Response(
   status,
@@ -15,7 +15,7 @@ Response jsonResponse(int status, Object body) => Response(
 
 Handler buildHandler({
   required QuoteService quotes,
-  PricingService? pricings,
+  required MaterialService materials,
   required IdentityVerifier identity,
   required Future<void> Function() checkDatabase,
   required String allowedOrigin,
@@ -31,7 +31,7 @@ Handler buildHandler({
     return principal;
   }
 
-  Future<Map<String, dynamic>> readJson(Request request) async {
+  Future<Map<String, dynamic>> readJsonObject(Request request) async {
     if (!(request.headers['content-type'] ?? '').toLowerCase().startsWith(
       'application/json',
     )) {
@@ -80,6 +80,7 @@ Handler buildHandler({
         'id': user.id,
         'role': user.role.name,
         'sellerApproved': user.sellerApproved,
+        'permissions': permissionsFor(user),
       });
     })
     ..get('/v1/quote-requests', (Request request) async {
@@ -88,64 +89,66 @@ Handler buildHandler({
         'items': items.map((q) => q.toJson()).toList(),
       });
     })
-    ..post('/v1/pricing/calculate', (Request request) async {
-      final user = await actor(request);
-      if (user.role != UserRole.seller || !user.sellerApproved) {
-        throw const ApiError(
-          403,
-          'seller_required',
-          'Somente vendedores aprovados podem calcular preços.',
-        );
-      }
-      return jsonResponse(200, calculatePricing(await readJson(request)));
+    ..get('/v1/quote-requests/<id>', (Request request, String id) async {
+      final quote = await quotes.get(await actor(request), id);
+      return jsonResponse(200, quote.toJson());
+    })
+    ..get('/v1/quote-requests/<id>/pdf', (Request request, String id) async {
+      // Proteção pronta: autentica, aplica perfil e propriedade. A geração do
+      // PDF (proposta) ainda não existe; ao implementá-la, gere o arquivo aqui,
+      // depois desta chamada.
+      await quotes.authorizePdf(await actor(request), id);
+      throw const ApiError(
+        501,
+        'not_implemented',
+        'Geração de PDF ainda não implementada.',
+      );
     })
     ..post('/v1/quote-requests', (Request request) async {
       final user = await actor(request);
-      final data = await readJson(request);
+      authorize(user, Permission.createQuote);
+      final data = await readJsonObject(request);
       return jsonResponse(201, (await quotes.create(user, data)).toJson());
-    });
-
-  if (pricings != null) {
-    router.get(
-      '/v1/materials',
-      (Request request) async => jsonResponse(200, {
-        'items': await pricings.materials(await actor(request)),
-      }),
-    );
-    router.get(
-      '/v1/quote-requests/<id>/pricing',
-      (Request request, String id) async =>
-          jsonResponse(200, await pricings.latest(await actor(request), id)),
-    );
-    router.post('/v1/quote-requests/<id>/pricing', (
-      Request request,
-      String id,
-    ) async {
-      final user = await actor(request);
-      pricings.authorize(user);
-      return jsonResponse(
-        201,
-        await pricings.save(user, id, await readJson(request)),
+    })
+    ..get('/v1/materials', (Request request) async {
+      final params = request.url.queryParameters;
+      final items = await materials.list(
+        await actor(request),
+        query: params['q'],
+        status: params['status'],
       );
+      return jsonResponse(200, {
+        'items': items.map((m) => m.toJson()).toList(),
+      });
+    })
+    ..get('/v1/materials/<id>', (Request request, String id) async {
+      final material = await materials.get(await actor(request), id);
+      return jsonResponse(200, material.toJson());
+    })
+    ..post('/v1/materials', (Request request) async {
+      final user = await actor(request);
+      authorize(user, Permission.writeMaterials);
+      final data = await readJsonObject(request);
+      return jsonResponse(201, (await materials.create(user, data)).toJson());
+    })
+    ..patch('/v1/materials/<id>', (Request request, String id) async {
+      final user = await actor(request);
+      authorize(user, Permission.writeMaterials);
+      final data = await readJsonObject(request);
+      return jsonResponse(200, (await materials.update(user, id, data)).toJson());
     });
-  }
 
-  final allowedOrigins = allowedOrigin
-      .split(',')
-      .map((value) => value.trim())
-      .where((value) => value.isNotEmpty)
-      .toSet();
   return (request) async {
     final origin = request.headers['origin'];
-    if (origin != null && !allowedOrigins.contains(origin)) {
+    if (origin != null && origin != allowedOrigin) {
       return jsonResponse(403, {
         'error': {'code': 'origin_denied', 'message': 'Origem não permitida.'},
       });
     }
     final cors = <String, String>{
-      'access-control-allow-origin': ?origin,
+      if (origin != null) 'access-control-allow-origin': allowedOrigin,
       'vary': 'Origin',
-      'access-control-allow-methods': 'GET, POST, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, PATCH, OPTIONS',
       'access-control-allow-headers': 'Authorization, Content-Type',
     };
     Response response;

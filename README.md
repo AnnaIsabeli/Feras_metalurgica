@@ -25,15 +25,23 @@ Usamos um backend único organizado por módulos, sem microsserviços nesta fase
 ## Implementado
 
 - Tema e navegação Flutter por perfil; formulário, carregamento, erro, lista vazia e nova tentativa.
-- Comprador cria/lista suas solicitações; vendedor aprovado consulta solicitações.
+- Perfis Cliente, Vendedor (aprovado ou não) e Administrador, com política de permissões única
+  na API (`docs/PERMISSIONS.md`) e interface que mostra só o que o perfil pode.
+- Cliente cria/lista/lê suas solicitações (a de outro cliente responde 404); vendedor aprovado e
+  administrador consultam. Rota do PDF já protegida (geração pendente).
+- Catálogo de materiais: administrador lista, pesquisa, cadastra, edita e desativa com confirmação; vendedor
+  aprovado consulta os ativos. Nada é apagado; a migração prevê snapshots de custo para históricos.
+- A consulta de materiais ativos pela API está disponível para o vendedor como fonte de composição;
+  o fluxo de composição/precificação de proposta ainda não foi implementado.
 - API de saúde, disponibilidade do banco, identidade e solicitações.
 - PostgreSQL com consultas parametrizadas, chaves estrangeiras e restrições.
-- Identidade substituível por Google; modo padrão nega acesso privado.
+- Identidade preparada para substituição por Google; autenticação Google final ainda pendente.
+  Fora do modo local demonstrativo, a API nega acesso privado por padrão.
 - Testes de autorização, validação, isolamento por comprador e estado da interface.
 
 ## Demonstração local
 
-Requisitos: Flutter stable com Dart >=3.8, Docker Desktop com engine Linux rodando, Python 3, Git e Chrome.
+Requisitos: Flutter stable com Dart >=3.8, Docker Desktop com engine Linux rodando, Git e Chrome.
 
 1. Copie `.env.example` para `.env`. Configure uma senha local alfanumérica (caracteres especiais
    na URL do PostgreSQL precisam ser codificados).
@@ -54,10 +62,11 @@ flutter pub get
 flutter run -d chrome --web-port 5000 --dart-define=ENABLE_DEMO=true
 ```
 
-Entre como comprador, crie uma solicitação, saia da demonstração e entre como vendedor para
-consultá-la. Os dados permanecem no PostgreSQL.
+Entre como cliente, crie uma solicitação, saia da demonstração e entre como vendedor para
+consultá-la; entre como administrador para gerir o catálogo. Os dados permanecem no PostgreSQL.
 
-O modo local aceita `demo-buyer` e `demo-seller`: **não são autenticação de produção**.
+O modo local aceita `demo-buyer`, `demo-buyer-2`, `demo-seller`, `demo-seller-pending` e
+`demo-admin`: **não são autenticação de produção**.
 A API só aceita esses tokens com `APP_ENV=development` e `DEV_AUTH_ENABLED=true`.
 A interface exige `ENABLE_DEMO=true`. Sem essas opções o acesso demonstrativo fica desativado.
 Não exponha esse modo na internet.
@@ -81,9 +90,14 @@ de desenvolvimento. Produção exige HTTPS. O primeiro alvo de demonstração é
 docker compose down
 ```
 
-As migrations são aplicadas por `python3 scripts/migrate.py` antes de iniciar a API.
-O processo preserva os dados e ignora arquivos já aplicados. Veja [Migrations](docs/MIGRATIONS.md).
-Não apague um volume com dados reais para atualizar o esquema.
+Migrações iniciais rodam apenas em volume vazio. Atualizações futuras exigem novas migrações;
+não apague um volume com dados reais para atualizar o esquema. Em um volume que já existia antes
+das migrações `002` e `003`, aplique-as uma vez:
+
+```
+Get-Content -Raw database/migrations/002_materials_and_quote_pricings.sql | docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+Get-Content -Raw database/migrations/003_admin_role.sql | docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
 
 ## Testar
 
@@ -104,5 +118,5 @@ Sem essa variável ele é ignorado, não aprovado. O GitHub Actions prepara essa
 
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [API implementada](docs/API.md)
-- [Regras e motor de precificação — Sprint 2](docs/PRICING.md)
+- [Perfis e permissões](docs/PERMISSIONS.md), [Decisões](docs/DECISIONS.md) e [Evidências](docs/EVIDENCIAS.md)
 - [Validação e limitações](docs/VALIDATION.md)

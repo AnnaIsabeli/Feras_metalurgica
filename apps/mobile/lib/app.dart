@@ -2,6 +2,7 @@ import 'features/auth/google_login_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'core/user_profile.dart';
 import 'features/pricing/pricing_screen.dart';
 import 'features/account_screen.dart';
 import 'features/quotes/quote_repository.dart';
@@ -43,10 +44,11 @@ class AccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => !_demo
       ? GoogleLoginScreen(
-          onAuthenticated: (token, seller) async {
+          onAuthenticated: (token, seller, profile) async {
             await Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => AppShell(seller: seller, token: token),
+                builder: (_) =>
+                    AppShell(seller: seller, token: token, profile: profile),
               ),
             );
           },
@@ -97,8 +99,9 @@ class AccessScreen extends StatelessWidget {
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.seller, this.token});
+  const AppShell({super.key, required this.seller, this.token, this.profile});
   final String? token;
+  final UserProfile? profile;
   final bool seller;
   @override
   State<AppShell> createState() => _AppShellState();
@@ -142,6 +145,11 @@ class _AppShellState extends State<AppShell> {
       title: const Text('ORCEX'),
       actions: [
         IconButton(
+          onPressed: () => select(2),
+          tooltip: 'Minha conta',
+          icon: ProfileAvatar(profile: widget.profile, size: 32),
+        ),
+        IconButton(
           onPressed: () => Navigator.pop(context),
           tooltip: widget.token == null ? 'Sair da demonstração' : 'Sair',
           icon: const Icon(Icons.logout),
@@ -156,7 +164,9 @@ class _AppShellState extends State<AppShell> {
             padding: const EdgeInsets.all(24),
             children: [
               Text(
-                widget.seller ? 'Olá, vendedor' : 'Olá, comprador',
+                widget.profile == null
+                    ? (widget.seller ? 'Olá, vendedor' : 'Olá, comprador')
+                    : 'Olá, ${widget.profile!.firstName}',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 12),
@@ -221,7 +231,11 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
       1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
-      _ => AccountScreen(api: api, demonstration: widget.token == null),
+      _ => AccountScreen(
+        api: api,
+        demonstration: widget.token == null,
+        profile: widget.profile,
+      ),
     },
     bottomNavigationBar: NavigationBar(
       selectedIndex: index,

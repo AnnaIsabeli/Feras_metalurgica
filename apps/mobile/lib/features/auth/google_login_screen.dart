@@ -3,13 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/api_client.dart';
+import '../../core/user_profile.dart';
 import 'login_presentation.dart';
 import 'google_button_stub.dart'
     if (dart.library.js_interop) 'google_button_web.dart';
 
 class GoogleLoginScreen extends StatefulWidget {
   const GoogleLoginScreen({super.key, required this.onAuthenticated});
-  final Future<void> Function(String token, bool seller) onAuthenticated;
+  final Future<void> Function(String token, bool seller, UserProfile profile)
+  onAuthenticated;
   @override
   State<GoogleLoginScreen> createState() => _GoogleLoginScreenState();
 }
@@ -104,6 +106,11 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
       await widget.onAuthenticated(
         token,
         me['role'] == 'seller' && me['sellerApproved'] == true,
+        UserProfile(
+          name: user.displayName ?? '',
+          email: user.email,
+          photoUrl: user.photoUrl,
+        ),
       );
     } catch (e) {
       if (mounted) {

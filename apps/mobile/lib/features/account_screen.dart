@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'admin/admin_screen.dart';
 
 import '../core/api_client.dart';
 import '../core/user_profile.dart';
@@ -80,10 +81,26 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 24),
                 ],
+                if (snapshot.data!['adminEligible'] == true) ...[
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AdminScreen(api: widget.api),
+                      ),
+                    ),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    label: const Text('Administração'),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 ListTile(
                   title: const Text('Tipo de acesso'),
                   subtitle: Text(
-                    snapshot.data!['role'] == 'seller'
+                    snapshot.data!['adminEligible'] == true
+                        ? (snapshot.data!['role'] == 'seller'
+                              ? 'Administrador · Vendedor'
+                              : 'Administrador')
+                        : snapshot.data!['role'] == 'seller'
                         ? 'Vendedor'
                         : 'Comprador',
                   ),

@@ -434,7 +434,7 @@ class AdminService {
       if (target != null) {
         final isAdmin = await tx.execute(
           Sql.named(
-            'SELECT 1 FROM admin_accounts WHERE user_id=@id AND enabled',
+            'SELECT 1 FROM admin_accounts WHERE user_id=@id AND activated_at IS NOT NULL',
           ),
           parameters: {'id': target},
         );
@@ -448,7 +448,7 @@ class AdminService {
       }
       final pending = await tx.execute(
         Sql.named(
-          "SELECT 1 FROM access_invitations WHERE email=@email AND role=@role AND expires_at>now() AND accepted_by IS NULL FOR UPDATE",
+          "SELECT 1 FROM access_invitations WHERE email=@email AND role=@role AND expires_at>now() AND (accepted_by IS NULL OR @role='admin') FOR UPDATE",
         ),
         parameters: {'email': normalized, 'role': role},
       );

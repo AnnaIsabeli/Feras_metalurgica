@@ -22,17 +22,20 @@ def main():
     if not 8 <= len(args.reason.strip()) <= 240:
         parser.error('Reason must contain 8–240 characters')
     email_sql, reason_sql = literal(email), literal(args.reason.strip())
+    delimiter = "$bootstrap_" + uuid.uuid4().hex + "$"
+    while delimiter in email or delimiter in args.reason:
+        delimiter = "$bootstrap_" + uuid.uuid4().hex + "$"
     sql = f"""
 BEGIN;
 SELECT pg_advisory_xact_lock(hashtext('orcex-first-admin'));
-DO $$ BEGIN
+DO {delimiter} BEGIN
  IF EXISTS(SELECT 1 FROM admin_accounts WHERE enabled AND activated_at IS NOT NULL) THEN
   RAISE EXCEPTION 'An active administrator already exists; use the MFA-protected panel';
  END IF;
  IF (SELECT count(*) FROM users WHERE lower(email)={email_sql} AND google_subject IS NOT NULL) != 1 THEN
   RAISE EXCEPTION 'Exactly one Google-verified account is required';
  END IF;
-END $$;
+END {delimiter};
 INSERT INTO access_invitations(email,role,reason,expires_at)
  VALUES({email_sql},'admin',{reason_sql},now()+interval '7 days')
  ON CONFLICT(email,role) DO UPDATE SET role='admin',invited_by=NULL,reason=EXCLUDED.reason,expires_at=EXCLUDED.expires_at,accepted_by=NULL,created_at=now();

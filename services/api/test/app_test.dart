@@ -17,8 +17,32 @@ class MemoryQuotes implements QuoteRepository {
   }
 
   @override
-  Future<List<QuoteRequest>> list({String? buyerId}) async =>
+  Future<List<QuoteRequest>> list({
+    String? buyerId,
+    String? customer,
+    String? from,
+    String? to,
+    String? status,
+  }) async =>
       items.where((q) => buyerId == null || q.buyerId == buyerId).toList();
+  @override
+  Future<QuoteRequest?> find(String id) async =>
+      items.where((q) => q.id == id).firstOrNull;
+  @override
+  Future<QuoteRequest?> transition({
+    required String id,
+    required String expected,
+    required String target,
+    required String actorId,
+    required String expectedPricingId,
+  }) async {
+    final i = items.indexWhere((q) => q.id == id && q.status.name == expected);
+    if (i < 0) return null;
+    return items[i] = QuoteRequest.fromJson({
+      ...items[i].toJson(),
+      'status': target,
+    });
+  }
 }
 
 void main() {
@@ -79,7 +103,7 @@ void main() {
       expect(body['status'], 'received');
     },
   );
-  test('seller cannot impersonate a buyer to create a request', () async {
+  test('seller must identify the customer when creating a request', () async {
     expect(
       (await handler(
         request(
@@ -89,8 +113,83 @@ void main() {
           body: valid,
         ),
       )).statusCode,
-      403,
+      422,
     );
+  });
+  test(
+    'approved seller creates a customer request without a buyer account',
+    () async {
+      final result = await handler(
+        request(
+          'POST',
+          '/v1/quote-requests',
+          token: 'demo-seller',
+          body: {
+            ...valid,
+            'customerName': ' Cliente WhatsApp ',
+            'customerContact': ' contato ',
+            'buyerId': 'forged',
+            'createdBy': 'forged',
+            'status': 'quoted',
+          },
+        ),
+      );
+      expect(result.statusCode, 201);
+      final body = jsonDecode(await result.readAsString()) as Map;
+      expect(body['buyerId'], isNull);
+      expect(body['createdBy'], DevelopmentIdentityVerifier.sellerId);
+      expect(body['customerName'], 'Cliente WhatsApp');
+      expect(body['customerContact'], 'contato');
+      expect(body['status'], 'received');
+      final buyerItems = await QuoteService(repository).list(
+        const Principal(DevelopmentIdentityVerifier.buyerId, UserRole.buyer),
+      );
+      expect(buyerItems, isEmpty);
+    },
+  );
+  test('unapproved seller cannot create customer requests', () async {
+    expect(
+      () => QuoteService(repository).create(
+        const Principal('pending', UserRole.seller),
+        {...valid, 'customerName': 'Cliente'},
+      ),
+      throwsA(anything),
+    );
+    expect(repository.items, isEmpty);
+  });
+  test('buyer cannot inject customer details or another creator', () async {
+    final item = await QuoteService(repository)
+        .create(const Principal('buyer', UserRole.buyer), {
+          ...valid,
+          'createdBy': 'forged',
+          'customerName': 'Someone else',
+          'customerContact': 'private',
+        });
+    expect(item.createdBy, 'buyer');
+    expect(item.buyerId, 'buyer');
+    expect(item.customerName, isNull);
+    expect(item.customerContact, isNull);
+  });
+  test('invalid customer details are rejected', () async {
+    for (final extra in [
+      {'customerName': ' '},
+      {'customerName': 'x' * 121},
+      {'customerName': 'Cliente', 'customerContact': 123},
+      {'customerName': 'Cliente', 'customerContact': 'x' * 121},
+    ]) {
+      expect(
+        (await handler(
+          request(
+            'POST',
+            '/v1/quote-requests',
+            token: 'demo-seller',
+            body: {...valid, ...extra},
+          ),
+        )).statusCode,
+        422,
+      );
+    }
+    expect(repository.items, isEmpty);
   });
   test(
     'invalid quantities, blank text and oversized text are rejected',

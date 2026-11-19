@@ -11,13 +11,15 @@ class QuoteViewModel extends ChangeNotifier {
   String? error;
   bool _disposed = false;
 
-  Future<void> load() async {
+  Map<String, String> _filters = const {};
+  Future<void> load({Map<String, String>? filters}) async {
     if (loading || _disposed) return;
+    if (filters != null) _filters = Map.unmodifiable(filters);
     loading = true;
     error = null;
     notifyListeners();
     try {
-      items = await repository.list();
+      items = await repository.list(filters: _filters);
     } catch (e) {
       error = e.toString();
     } finally {
@@ -26,7 +28,13 @@ class QuoteViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> submit(String product, String description, int quantity) async {
+  Future<bool> submit(
+    String product,
+    String description,
+    int quantity, {
+    String? customerName,
+    String? customerContact,
+  }) async {
     if (loading || _disposed) return false;
     loading = true;
     error = null;
@@ -37,6 +45,8 @@ class QuoteViewModel extends ChangeNotifier {
         product: product,
         description: description,
         quantity: quantity,
+        customerName: customerName,
+        customerContact: customerContact,
       );
       success = true;
     } catch (e) {

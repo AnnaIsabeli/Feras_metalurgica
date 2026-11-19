@@ -59,7 +59,20 @@ class PostgresQuoteRepository implements QuoteRepository {
     required String expected,
     required String target,
     required String actorId,
+    required String expectedPricingId,
   }) => pool.runTx((session) async {
+    await session.execute(
+      Sql.named('SELECT id FROM quote_requests WHERE id=@id FOR UPDATE'),
+      parameters: {'id': id},
+    );
+    final pricing = await session.execute(
+      Sql.named(
+        'SELECT id FROM quote_pricings WHERE quote_request_id=@id ORDER BY created_at DESC,id DESC LIMIT 1',
+      ),
+      parameters: {'id': id},
+    );
+    if (pricing.isEmpty || pricing.single[0] != expectedPricingId) return null;
+
     final rows = await session.execute(
       Sql.named(
         'UPDATE quote_requests SET status=@target WHERE id=@id AND status=@expected RETURNING *',

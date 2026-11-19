@@ -34,7 +34,7 @@ void main() {
           parameters: {'id': id},
         );
       });
-      await pricing.createQuote(seller, {
+      final created = await pricing.createQuote(seller, {
         'idempotencyKey': id,
         'customerName': 'Cliente teste',
         'product': 'Peça',
@@ -42,7 +42,18 @@ void main() {
         'quantity': 2,
         'pricing': pricingPayload(),
       }, service);
+      final revised = await pricing.save(seller, id, pricingPayload());
+      await expectLater(
+        service.changeStatus(seller, id, {
+          'expectedStatus': 'pending',
+          'status': 'approved',
+          'expectedPricingId': created['id'],
+        }),
+        throwsA(anything),
+      );
+      final revision = revised['id'];
       var quote = await service.changeStatus(seller, id, {
+        'expectedPricingId': revision,
         'expectedStatus': 'pending',
         'status': 'approved',
       });
@@ -50,6 +61,7 @@ void main() {
       expect(quote.unitPriceCents, 30000);
       await expectLater(
         service.changeStatus(seller, id, {
+          'expectedPricingId': revision,
           'expectedStatus': 'pending',
           'status': 'rejected',
         }),
@@ -63,22 +75,29 @@ void main() {
         service.changeStatus(
           const Principal(DevelopmentIdentityVerifier.buyerId, UserRole.buyer),
           id,
-          {'expectedStatus': 'approved', 'status': 'inProduction'},
+          {
+            'expectedPricingId': revision,
+            'expectedStatus': 'approved',
+            'status': 'inProduction',
+          },
         ),
         throwsA(anything),
       );
       quote = await service.changeStatus(seller, id, {
+        'expectedPricingId': revision,
         'expectedStatus': 'approved',
         'status': 'inProduction',
       });
       expect(quote.status.name, 'inProduction');
       quote = await service.changeStatus(seller, id, {
+        'expectedPricingId': revision,
         'expectedStatus': 'inProduction',
         'status': 'completed',
       });
       expect(quote.status.name, 'completed');
       await expectLater(
         service.changeStatus(seller, id, {
+          'expectedPricingId': revision,
           'expectedStatus': 'completed',
           'status': 'pending',
         }),

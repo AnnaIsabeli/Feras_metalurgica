@@ -34,6 +34,7 @@ class MemoryQuotes implements QuoteRepository {
     required String expected,
     required String target,
     required String actorId,
+    required String expectedPricingId,
   }) async {
     final i = items.indexWhere((q) => q.id == id && q.status.name == expected);
     if (i < 0) return null;

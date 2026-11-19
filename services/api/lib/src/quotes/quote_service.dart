@@ -112,6 +112,14 @@ class QuoteService {
     }
     final target = data['status'];
     final expected = data['expectedStatus'];
+    if (quote.pricingId == null ||
+        data['expectedPricingId'] != quote.pricingId) {
+      throw const ApiError(
+        409,
+        'pricing_changed',
+        'Os valores do orçamento mudaram. Atualize antes de confirmar.',
+      );
+    }
     if (target is! String || expected is! String) {
       throw const ApiError(
         422,
@@ -147,6 +155,7 @@ class QuoteService {
       expected: expected,
       target: target,
       actorId: actor.id,
+      expectedPricingId: quote.pricingId!,
     );
     if (updated == null) {
       throw const ApiError(

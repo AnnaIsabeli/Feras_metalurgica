@@ -68,6 +68,18 @@ Handler buildHandler({
     return data;
   }
 
+  Future<Principal> adminActor(Request request) async {
+    final origin = request.headers['origin'];
+    if (origin != null && origin != 'https://orcex.shop') {
+      throw const ApiError(
+        403,
+        'origin_denied',
+        'Origem administrativa não permitida.',
+      );
+    }
+    return actor(request);
+  }
+
   final router = Router()
     ..get('/health', (Request _) => jsonResponse(200, {'status': 'ok'}))
     ..get('/ready', (Request _) async {
@@ -195,10 +207,10 @@ Handler buildHandler({
     router.post(
       '/v1/admin/enrollment',
       (Request request) async =>
-          jsonResponse(201, await admin.enroll(await actor(request))),
+          jsonResponse(201, await admin.enroll(await adminActor(request))),
     );
     router.post('/v1/admin/session', (Request request) async {
-      final user = await actor(request);
+      final user = await adminActor(request);
       admin.fresh(user);
       final data = await readJson(request);
       if (data.length != 1 ||
@@ -220,13 +232,13 @@ Handler buildHandler({
       (Request request) async => jsonResponse(
         200,
         await admin.overview(
-          await actor(request),
+          await adminActor(request),
           request.headers['x-admin-session'],
         ),
       ),
     );
     router.post('/v1/admin/invitations', (Request request) async {
-      final user = await actor(request);
+      final user = await adminActor(request);
       admin.eligible(user);
       return jsonResponse(
         201,
@@ -239,7 +251,7 @@ Handler buildHandler({
     });
     router.post('/v1/admin/lock', (Request request) async {
       await admin.lock(
-        await actor(request),
+        await adminActor(request),
         request.headers['x-admin-session'],
       );
       return jsonResponse(200, {'locked': true});

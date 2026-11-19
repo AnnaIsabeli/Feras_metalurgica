@@ -181,6 +181,18 @@ class AdminService {
           !(row['enrollment_expires_at'] as DateTime).isAfter(now())) {
         return <String, dynamic>{'error': 'setup_expired'};
       }
+      if (row['activated_at'] == null) {
+        final validInvite = await tx.execute(
+          Sql.named(
+            '''SELECT 1 FROM access_invitations i WHERE i.accepted_by=@id AND i.role='admin' AND i.expires_at>now()
+          AND (i.invited_by IS NULL OR EXISTS(SELECT 1 FROM admin_accounts a WHERE a.user_id=i.invited_by AND a.enabled AND a.activated_at IS NOT NULL))''',
+          ),
+          parameters: {'id': actor.id},
+        );
+        if (validInvite.isEmpty) {
+          return <String, dynamic>{'error': 'invitation_expired'};
+        }
+      }
       final secret = await crypto.decryptSecret(
         actor.id,
         row['totp_encrypted'] as String,
@@ -228,6 +240,12 @@ class AdminService {
       return <String, dynamic>{'session': token, 'expiresIn': 300};
     });
     switch (response['error']) {
+      case 'invitation_expired':
+        throw const ApiError(
+          403,
+          'invitation_required',
+          'Convite de administrador ausente ou expirado.',
+        );
       case 'locked':
         throw const ApiError(
           429,
@@ -363,7 +381,7 @@ class AdminService {
       await authorize(actor, token, recent: role == 'admin', transaction: tx);
       final activeAdmin = await tx.execute(
         Sql.named(
-          'SELECT user_id FROM admin_accounts WHERE user_id=@id AND enabled FOR UPDATE',
+          'SELECT user_id FROM admin_accounts WHERE user_id=@id AND enabled AND activated_at IS NOT NULL FOR UPDATE',
         ),
         parameters: {'id': actor.id},
       );

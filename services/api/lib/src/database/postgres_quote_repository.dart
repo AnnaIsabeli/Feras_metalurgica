@@ -16,7 +16,7 @@ class PostgresQuoteRepository implements QuoteRepository {
       ),
       parameters: buyerId == null ? {} : {'buyer': buyerId},
     );
-    return result.map((row) => _map(row.toColumnMap())).toList();
+    return result.map((row) => mapRow(row.toColumnMap())).toList();
   }
 
   @override
@@ -40,10 +40,10 @@ class PostgresQuoteRepository implements QuoteRepository {
         'created': request.createdAt,
       },
     );
-    return _map(result.first.toColumnMap());
+    return mapRow(result.first.toColumnMap());
   }
 
-  QuoteRequest _map(Map<String, dynamic> row) => QuoteRequest(
+  static QuoteRequest mapRow(Map<String, dynamic> row) => QuoteRequest(
     id: row['id'] as String,
     buyerId: row['buyer_id'] as String?,
     createdBy: row['created_by'] as String,

@@ -199,7 +199,7 @@ class _AppShellState extends State<AppShell> {
                   context,
                   MaterialPageRoute<void>(
                     builder: (_) => widget.seller
-                        ? PricingScreen(api: api)
+                        ? PricingScreen(api: api, onSaved: quotes.load)
                         : NewQuoteScreen(model: quotes),
                   ),
                 ),
@@ -207,15 +207,13 @@ class _AppShellState extends State<AppShell> {
                   widget.seller ? Icons.calculate_outlined : Icons.add,
                 ),
                 label: Text(
-                  widget.seller
-                      ? 'Simular preço de venda'
-                      : 'Solicitar orçamento',
+                  widget.seller ? 'Criar orçamento' : 'Solicitar orçamento',
                 ),
               ),
               const SizedBox(height: 20),
               Text(
                 widget.seller
-                    ? 'Os cálculos usam os custos e percentuais que você informar. A simulação não envia uma proposta.'
+                    ? 'Informe o cliente, componha os valores e salve o orçamento completo com seu PDF.'
                     : 'Informe produto, quantidade e os detalhes necessários para o atendimento.',
               ),
             ],

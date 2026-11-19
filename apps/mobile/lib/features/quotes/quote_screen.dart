@@ -44,7 +44,9 @@ class QuoteScreen extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => NewQuoteScreen(model: model, seller: seller),
+                builder: (_) => seller
+                    ? PricingScreen(api: api, onSaved: model.load)
+                    : NewQuoteScreen(model: model),
               ),
             ),
             icon: const Icon(Icons.add),
@@ -108,6 +110,12 @@ String _statusLabel(RequestStatus status) => switch (status) {
   RequestStatus.drafting => 'Em elaboração',
   RequestStatus.quoted => 'Proposta enviada',
   RequestStatus.closed => 'Encerrada',
+  RequestStatus.pending => 'Aguardando aprovação',
+  RequestStatus.approved => 'Aprovado',
+  RequestStatus.rejected => 'Recusado',
+  RequestStatus.inProduction => 'Em produção',
+  RequestStatus.completed => 'Concluído',
+  RequestStatus.cancelled => 'Cancelado',
 };
 
 class NewQuoteScreen extends StatefulWidget {

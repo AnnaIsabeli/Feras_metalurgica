@@ -1,4 +1,16 @@
-enum RequestStatus { received, needsInformation, drafting, quoted, closed }
+enum RequestStatus {
+  received,
+  needsInformation,
+  drafting,
+  quoted,
+  closed,
+  pending,
+  approved,
+  rejected,
+  inProduction,
+  completed,
+  cancelled,
+}
 
 class QuoteRequest {
   const QuoteRequest({

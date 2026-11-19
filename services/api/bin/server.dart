@@ -28,7 +28,10 @@ Future<void> main() async {
   if (config.devAuth && googleClients.isNotEmpty) {
     throw StateError('Google identity requires DEV_AUTH_ENABLED=false.');
   }
-  final adminKey = Platform.environment['ADMIN_MFA_KEY'];
+  final configuredAdminKey = Platform.environment['ADMIN_MFA_KEY']?.trim();
+  final adminKey = configuredAdminKey == null || configuredAdminKey.isEmpty
+      ? null
+      : configuredAdminKey;
   if (adminKey != null && (config.devAuth || googleClients.isEmpty)) {
     throw StateError(
       'Administration requires Google identity without development authentication.',

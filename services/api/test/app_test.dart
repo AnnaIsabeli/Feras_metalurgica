@@ -5,7 +5,7 @@ import 'package:fera_api/src/http/app.dart';
 import 'package:fera_api/src/materials/material_service.dart';
 import 'support/memory_repositories.dart';
 import 'package:fera_api/src/quotes/quote_service.dart';
-import 'package:fera_contracts/fera_contracts.dart';
+
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 

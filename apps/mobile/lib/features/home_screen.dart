@@ -130,7 +130,12 @@ class HomeScreen extends StatelessWidget {
             style: TextStyle(fontSize: 14, color: Color(0xffa9a39b)),
           ),
           const SizedBox(height: 20),
-          const ProjectCarousel(),
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: wide ? 520 : 600),
+              child: const ProjectCarousel(),
+            ),
+          ),
         ],
       );
       return SingleChildScrollView(

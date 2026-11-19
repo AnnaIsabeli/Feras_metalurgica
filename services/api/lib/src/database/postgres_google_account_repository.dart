@@ -44,7 +44,7 @@ class PostgresGoogleAccountRepository implements GoogleAccountRepository {
       );
       await tx.execute(
         Sql.named(
-          'UPDATE access_invitations SET accepted_by=@id WHERE email=lower(@email)',
+          "UPDATE access_invitations SET accepted_by=@id WHERE email=lower(@email) AND role='seller'",
         ),
         parameters: {'id': id, 'email': email},
       );

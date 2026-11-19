@@ -138,7 +138,7 @@ class AdminService {
       );
       await tx.execute(
         Sql.named(
-          'UPDATE access_invitations SET accepted_by=@id WHERE email=lower(@email)',
+          "UPDATE access_invitations SET accepted_by=@id WHERE email=lower(@email) AND role='admin'",
         ),
         parameters: {'id': actor.id, 'email': email},
       );
@@ -448,9 +448,9 @@ class AdminService {
       }
       final pending = await tx.execute(
         Sql.named(
-          "SELECT 1 FROM access_invitations WHERE email=@email AND expires_at>now() AND accepted_by IS NULL FOR UPDATE",
+          "SELECT 1 FROM access_invitations WHERE email=@email AND role=@role AND expires_at>now() AND accepted_by IS NULL FOR UPDATE",
         ),
-        parameters: {'email': normalized},
+        parameters: {'email': normalized, 'role': role},
       );
       if (pending.isNotEmpty) {
         throw const ApiError(
@@ -461,7 +461,7 @@ class AdminService {
       }
       await tx.execute(
         Sql.named(
-          "INSERT INTO access_invitations(email,role,invited_by,reason,expires_at,accepted_by) VALUES(@email,@role,@actor,@reason,now()+interval '7 days',@accepted) ON CONFLICT(email) DO UPDATE SET role=EXCLUDED.role,invited_by=EXCLUDED.invited_by,reason=EXCLUDED.reason,expires_at=EXCLUDED.expires_at,accepted_by=EXCLUDED.accepted_by,created_at=now()",
+          "INSERT INTO access_invitations(email,role,invited_by,reason,expires_at,accepted_by) VALUES(@email,@role,@actor,@reason,now()+interval '7 days',@accepted) ON CONFLICT(email,role) DO UPDATE SET role=EXCLUDED.role,invited_by=EXCLUDED.invited_by,reason=EXCLUDED.reason,expires_at=EXCLUDED.expires_at,accepted_by=EXCLUDED.accepted_by,created_at=now()",
         ),
         parameters: {
           'email': normalized,

@@ -314,6 +314,32 @@ void main() {
       },
     );
     test(
+      'seller and administrator invitations can coexist without bypassing MFA',
+      () async {
+        final token = await unlock();
+        await service.invite(owner, token, invitation('admin'));
+        await service.invite(owner, token, invitation('seller'));
+        final resolved = (await PostgresGoogleAccountRepository(
+          pool,
+        ).resolve(subject: 'test-$buyerId', email: buyerEmail, name: 'Test'))!;
+        expect(resolved.role, UserRole.seller);
+        expect(resolved.adminEligible, isTrue);
+        final target = Principal(
+          buyerId,
+          resolved.role,
+          sellerApproved: true,
+          adminEligible: true,
+          googleVerified: true,
+          tokenIssuedAt: DateTime.now(),
+        );
+        expect((await service.enroll(target))['otpauthUri'], isA<String>());
+        await expectLater(
+          service.overview(target, null),
+          throwsA(error('admin_session_required')),
+        );
+      },
+    );
+    test(
       'future seller invitations apply only to the verified invited email',
       () async {
         final token = await unlock();

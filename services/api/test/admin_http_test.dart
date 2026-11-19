@@ -56,7 +56,7 @@ void main() {
     Uri.parse('https://orcex.shop$path'),
     headers: {
       if (token != null) 'authorization': 'Bearer $token',
-      if (origin != null) 'origin': origin,
+      'origin': ?origin,
       'content-type': 'application/json',
     },
     body: method == 'GET' ? null : '{}',

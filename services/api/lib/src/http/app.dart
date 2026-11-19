@@ -301,6 +301,7 @@ Handler buildHandler({
         ...cors,
         'cache-control': 'private, no-store',
         'x-content-type-options': 'nosniff',
+        'referrer-policy': 'no-referrer',
       },
     );
   };

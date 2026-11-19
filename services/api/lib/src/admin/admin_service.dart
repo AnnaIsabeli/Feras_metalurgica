@@ -348,6 +348,7 @@ class AdminService {
     String? token,
     Map<String, dynamic> data,
   ) async {
+    eligible(actor);
     final allowed = {'email', 'role', 'reason', 'commandId'};
     if (data.keys.any((k) => !allowed.contains(k))) {
       throw const ApiError(422, 'invalid_command', 'Campos não permitidos.');
@@ -437,7 +438,7 @@ class AdminService {
           ),
           parameters: {'id': target},
         );
-        if (isAdmin.isNotEmpty) {
+        if (role == 'admin' && isAdmin.isNotEmpty) {
           throw const ApiError(
             409,
             'already_admin',

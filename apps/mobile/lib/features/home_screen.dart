@@ -19,11 +19,11 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onList;
   final UserProfile? profile;
   @override
-  Widget build(BuildContext context) => Center(
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 900),
-      child: ListView(
-        padding: const EdgeInsets.all(20),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, bounds) {
+      final wide = bounds.maxWidth >= 1000;
+      final overview = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             profile == null || profile!.name.trim().isEmpty
@@ -57,7 +57,9 @@ class HomeScreen extends StatelessWidget {
           ListenableBuilder(
             listenable: model,
             builder: (context, _) {
-              if (model.loading) return const LinearProgressIndicator();
+              if (model.loading) {
+                return const LinearProgressIndicator();
+              }
               if (model.error != null) {
                 return TextButton.icon(
                   onPressed: model.load,
@@ -117,7 +119,11 @@ class HomeScreen extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 28),
+        ],
+      );
+      final showcase = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           const Text(
             'Conheça um dos projetos da Fera Metalúrgica',
             textAlign: TextAlign.center,
@@ -126,14 +132,41 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
+              constraints: BoxConstraints(maxWidth: wide ? 520 : 600),
               child: const ProjectCarousel(),
             ),
           ),
-          const SizedBox(height: 20),
         ],
-      ),
-    ),
+      );
+      return SingleChildScrollView(
+        key: const Key('homeScroll'),
+        padding: EdgeInsets.all(wide ? 32 : 20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1160),
+            child: wide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 5, child: overview),
+                      const SizedBox(width: 40),
+                      Expanded(flex: 6, child: showcase),
+                    ],
+                  )
+                : ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Column(
+                      children: [
+                        overview,
+                        const SizedBox(height: 28),
+                        showcase,
+                      ],
+                    ),
+                  ),
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -153,9 +186,9 @@ class _QuickAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
+        child: LayoutBuilder(
+          builder: (context, bounds) {
+            final icon = Container(
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
@@ -163,19 +196,25 @@ class _QuickAction extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Center(child: SvgPicture.asset(asset)),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+            );
+            final text = Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            );
+            return bounds.maxWidth < 140
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [icon, const SizedBox(height: 8), text],
+                  )
+                : Row(
+                    children: [
+                      icon,
+                      const SizedBox(width: 8),
+                      Expanded(child: text),
+                    ],
+                  );
+          },
         ),
       ),
     ),

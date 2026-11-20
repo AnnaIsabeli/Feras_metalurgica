@@ -33,11 +33,8 @@ class LoginPresentation extends StatelessWidget {
         builder: (context, constraints) {
           final inset = MediaQuery.paddingOf(context);
           final compact = constraints.maxWidth < 600;
-          final height = math.max(
-            540.0,
-            constraints.maxHeight - inset.vertical,
-          );
-          final markSize = math.min(200.0, height * 200 / 852);
+          final height = math.max(0.0, constraints.maxHeight - inset.vertical);
+          final markSize = (height * .18).clamp(88.0, 144.0);
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -61,23 +58,26 @@ class LoginPresentation extends StatelessWidget {
                 ),
               SafeArea(
                 child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: height),
+                    constraints: BoxConstraints(
+                      minHeight: math.max(0.0, height - 48),
+                    ),
                     child: Align(
-                      alignment: Alignment.topCenter,
+                      alignment: Alignment.center,
                       child: SizedBox(
                         width: 393,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            SizedBox(height: height * .3286),
                             SizedBox.square(
                               dimension: markSize,
                               child: const FittedBox(child: _FeraMark()),
                             ),
-                            SizedBox(
-                              height: math.max(32.0, height * .3122 - markSize),
-                            ),
+                            const SizedBox(height: 24),
                             _entry(),
                             const SizedBox(height: 24),
                             const Padding(

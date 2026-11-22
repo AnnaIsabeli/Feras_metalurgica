@@ -1,6 +1,11 @@
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/theme/orcex_theme.dart';
+import 'features/home_screen.dart';
+import 'features/auth/google_login_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'core/user_profile.dart';
 import 'features/pricing/pricing_screen.dart';
 import 'features/account_screen.dart';
 import 'features/quotes/quote_repository.dart';
@@ -13,25 +18,14 @@ class FeraApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Fera Metalúrgica',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xffff7800),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xff363431),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xffff7800),
-          foregroundColor: Colors.black,
-          minimumSize: const Size(0, 48),
-        ),
-      ),
-    ),
+    theme: orcexDarkTheme(),
+    locale: const Locale('pt', 'BR'),
+    supportedLocales: const [Locale('pt', 'BR')],
+    localizationsDelegates: const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
     home: const AccessScreen(),
   );
 }
@@ -40,45 +34,56 @@ class AccessScreen extends StatelessWidget {
   const AccessScreen({super.key});
   static const _demo = bool.fromEnvironment('ENABLE_DEMO', defaultValue: false);
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Fera Metalúrgica')),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Bem-vindo ao ORCEX',
-                style: Theme.of(context).textTheme.headlineSmall,
+  Widget build(BuildContext context) => !_demo
+      ? GoogleLoginScreen(
+          onAuthenticated: (token, seller, profile) async {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    AppShell(seller: seller, token: token, profile: profile),
               ),
-              const SizedBox(height: 16),
-              Text(
-                _demo
-                    ? 'Demonstração local • acesso Google ainda não integrado.'
-                    : 'O acesso com Google será disponibilizado na próxima etapa.',
+            );
+          },
+        )
+      : Scaffold(
+          appBar: AppBar(title: const Text('Fera Metalúrgica')),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Bem-vindo ao ORCEX',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _demo
+                          ? 'Demonstração local • acesso Google ainda não integrado.'
+                          : 'O acesso com Google será disponibilizado na próxima etapa.',
+                    ),
+                    if (_demo) ...[
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: () => _open(context, false),
+                        child: const Text('Demonstração: comprador'),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => _open(context, true),
+                        child: const Text('Demonstração: vendedor'),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              if (_demo) ...[
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => _open(context, false),
-                  child: const Text('Demonstração: comprador'),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => _open(context, true),
-                  child: const Text('Demonstração: vendedor'),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-      ),
-    ),
-  );
+        );
   void _open(BuildContext context, bool seller) => Navigator.push(
     context,
     MaterialPageRoute<void>(builder: (_) => AppShell(seller: seller)),
@@ -86,7 +91,9 @@ class AccessScreen extends StatelessWidget {
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.seller});
+  const AppShell({super.key, required this.seller, this.token, this.profile});
+  final String? token;
+  final UserProfile? profile;
   final bool seller;
   @override
   State<AppShell> createState() => _AppShellState();
@@ -100,11 +107,13 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     api = ApiClient(
-      baseUrl: const String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'http://localhost:8080',
-      ),
-      token: widget.seller ? 'demo-seller' : 'demo-buyer',
+      baseUrl: widget.token != null
+          ? Uri.base.resolve('/api').toString()
+          : const String.fromEnvironment(
+              'API_BASE_URL',
+              defaultValue: 'http://localhost:8080',
+            ),
+      token: widget.token ?? (widget.seller ? 'demo-seller' : 'demo-buyer'),
     );
     quotes = QuoteViewModel(ApiQuoteRepository(api));
     quotes.load();
@@ -125,91 +134,71 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
+      automaticallyImplyLeading: false,
       title: const Text('ORCEX'),
       actions: [
         IconButton(
-          onPressed: () => Navigator.pop(context),
-          tooltip: 'Sair da demonstração',
+          onPressed: () => select(2),
+          tooltip: 'Minha conta',
+          icon: ProfileAvatar(profile: widget.profile, size: 32),
+        ),
+        IconButton(
+          onPressed: () async {
+            final leave = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Sair da conta?'),
+                content: const Text(
+                  'Você precisará entrar com Google novamente.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Continuar aqui'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Sair'),
+                  ),
+                ],
+              ),
+            );
+            if (leave == true && context.mounted) {
+              Navigator.pop(context);
+            }
+          },
+          tooltip: widget.token == null ? 'Sair da demonstração' : 'Sair',
           icon: const Icon(Icons.logout),
         ),
       ],
     ),
     body: switch (index) {
-      0 => Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              Text(
-                widget.seller ? 'Olá, vendedor' : 'Olá, comprador',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                widget.seller
-                    ? 'Consulte as solicitações e prepare o preço de cada produto.'
-                    : 'Descreva o que você precisa e acompanhe seus orçamentos.',
-              ),
-              const SizedBox(height: 24),
-              ListenableBuilder(
-                listenable: quotes,
-                builder: (context, _) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          quotes.loading
-                              ? 'Carregando solicitações…'
-                              : quotes.error != null
-                              ? 'Não foi possível atualizar as solicitações.'
-                              : '${quotes.items.length} solicitações registradas',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: () => select(1),
-                          icon: const Icon(Icons.request_quote_outlined),
-                          label: const Text('Abrir orçamentos'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => widget.seller
-                        ? PricingScreen(api: api)
-                        : NewQuoteScreen(model: quotes),
-                  ),
-                ),
-                icon: Icon(
-                  widget.seller ? Icons.calculate_outlined : Icons.add,
-                ),
-                label: Text(
-                  widget.seller
-                      ? 'Simular preço de venda'
-                      : 'Solicitar orçamento',
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                widget.seller
-                    ? 'Os cálculos usam os custos e percentuais que você informar. A simulação não envia uma proposta.'
-                    : 'Informe produto, quantidade e os detalhes necessários para o atendimento.',
-              ),
-            ],
+      0 => Theme(
+        data: orcexTheme(),
+        child: HomeScreen(
+          model: quotes,
+          seller: widget.seller,
+          profile: widget.profile,
+          onList: () => select(1),
+          onCreate: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (_) => widget.seller
+                  ? PricingScreen(api: api, onSaved: quotes.load)
+                  : NewQuoteScreen(model: quotes),
+            ),
           ),
         ),
       ),
       1 => QuoteScreen(model: quotes, seller: widget.seller, api: api),
-      _ => AccountScreen(api: api),
+      _ => Theme(
+        data: orcexDarkTheme(),
+        child: AccountScreen(
+          api: api,
+          demonstration: widget.token == null,
+          profile: widget.profile,
+        ),
+      ),
     },
     bottomNavigationBar: NavigationBar(
       selectedIndex: index,

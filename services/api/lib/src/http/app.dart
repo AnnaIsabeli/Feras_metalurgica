@@ -1,4 +1,6 @@
 import 'dart:convert';
+import '../admin/admin_service.dart';
+import '../documents/quote_pdf_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import '../auth/principal.dart';
@@ -16,6 +18,8 @@ Response jsonResponse(int status, Object body) => Response(
 Handler buildHandler({
   required QuoteService quotes,
   PricingService? pricings,
+  AdminService? admin,
+  QuotePdfService? pdfs,
   required IdentityVerifier identity,
   required Future<void> Function() checkDatabase,
   required String allowedOrigin,
@@ -64,6 +68,18 @@ Handler buildHandler({
     return data;
   }
 
+  Future<Principal> adminActor(Request request) async {
+    final origin = request.headers['origin'];
+    if (origin != null && origin != 'https://orcex.shop') {
+      throw const ApiError(
+        403,
+        'origin_denied',
+        'Origem administrativa não permitida.',
+      );
+    }
+    return actor(request);
+  }
+
   final router = Router()
     ..get('/health', (Request _) => jsonResponse(200, {'status': 'ok'}))
     ..get('/ready', (Request _) async {
@@ -80,14 +96,29 @@ Handler buildHandler({
         'id': user.id,
         'role': user.role.name,
         'sellerApproved': user.sellerApproved,
+        'adminEligible': admin != null && user.adminEligible,
       });
     })
     ..get('/v1/quote-requests', (Request request) async {
-      final items = await quotes.list(await actor(request));
+      final items = await quotes.list(
+        await actor(request),
+        filters: request.url.queryParameters,
+      );
       return jsonResponse(200, {
         'items': items.map((q) => q.toJson()).toList(),
       });
     })
+    ..post(
+      '/v1/quote-requests/<id>/status',
+      (Request request, String id) async => jsonResponse(
+        200,
+        (await quotes.changeStatus(
+          await actor(request),
+          id,
+          await readJson(request),
+        )).toJson(),
+      ),
+    )
     ..post('/v1/pricing/calculate', (Request request) async {
       final user = await actor(request);
       if (user.role != UserRole.seller || !user.sellerApproved) {
@@ -106,6 +137,13 @@ Handler buildHandler({
     });
 
   if (pricings != null) {
+    router.post('/v1/quotes', (Request request) async {
+      final user = await actor(request);
+      return jsonResponse(
+        201,
+        await pricings.createQuote(user, await readJson(request), quotes),
+      );
+    });
     router.get(
       '/v1/materials',
       (Request request) async => jsonResponse(200, {
@@ -130,6 +168,96 @@ Handler buildHandler({
     });
   }
 
+  if (pdfs != null) {
+    router.get('/v1/quote-requests/<id>/pdf', (
+      Request request,
+      String id,
+    ) async {
+      final user = await actor(request);
+      pdfs.authorize(user);
+      final download = request.url.queryParameters['download'];
+      if (download != null && download != '0' && download != '1') {
+        throw const ApiError(
+          422,
+          'invalid_download',
+          'Use download=1 para baixar o arquivo.',
+        );
+      }
+      final file = await pdfs.generate(
+        user,
+        id,
+        pricingId: request.url.queryParameters['pricingId'],
+      );
+      return Response.ok(
+        file.bytes,
+        headers: {
+          'content-type': 'application/pdf',
+          'content-disposition':
+              '${download == '1' ? 'attachment' : 'inline'}; filename="${file.filename}"',
+          'content-length': file.bytes.length.toString(),
+          'cache-control': 'private, no-store',
+          'pragma': 'no-cache',
+          'x-content-type-options': 'nosniff',
+        },
+      );
+    });
+  }
+
+  if (admin != null) {
+    router.post(
+      '/v1/admin/enrollment',
+      (Request request) async =>
+          jsonResponse(201, await admin.enroll(await adminActor(request))),
+    );
+    router.post('/v1/admin/session', (Request request) async {
+      final user = await adminActor(request);
+      admin.fresh(user);
+      final data = await readJson(request);
+      if (data.length != 1 ||
+          data['code'] is! String ||
+          !RegExp(r'^\d{6}$').hasMatch(data['code'] as String)) {
+        throw const ApiError(
+          422,
+          'invalid_code',
+          'Informe os seis dígitos do autenticador.',
+        );
+      }
+      return jsonResponse(
+        201,
+        await admin.unlock(user, data['code'] as String),
+      );
+    });
+    router.get(
+      '/v1/admin/overview',
+      (Request request) async => jsonResponse(
+        200,
+        await admin.overview(
+          await adminActor(request),
+          request.headers['x-admin-session'],
+        ),
+      ),
+    );
+    router.post('/v1/admin/invitations', (Request request) async {
+      final user = await adminActor(request);
+      admin.eligible(user);
+      return jsonResponse(
+        201,
+        await admin.invite(
+          user,
+          request.headers['x-admin-session'],
+          await readJson(request),
+        ),
+      );
+    });
+    router.post('/v1/admin/lock', (Request request) async {
+      await admin.lock(
+        await adminActor(request),
+        request.headers['x-admin-session'],
+      );
+      return jsonResponse(200, {'locked': true});
+    });
+  }
+
   final allowedOrigins = allowedOrigin
       .split(',')
       .map((value) => value.trim())
@@ -146,7 +274,9 @@ Handler buildHandler({
       'access-control-allow-origin': ?origin,
       'vary': 'Origin',
       'access-control-allow-methods': 'GET, POST, OPTIONS',
-      'access-control-allow-headers': 'Authorization, Content-Type',
+      'access-control-allow-headers':
+          'Authorization, Content-Type, X-Admin-Session',
+      'access-control-expose-headers': 'Content-Disposition',
     };
     Response response;
     try {
@@ -166,6 +296,13 @@ Handler buildHandler({
         },
       });
     }
-    return response.change(headers: cors);
+    return response.change(
+      headers: {
+        ...cors,
+        'cache-control': 'private, no-store',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'no-referrer',
+      },
+    );
   };
 }

@@ -102,7 +102,7 @@ void main() {
         Sql.named('SELECT status FROM quote_requests WHERE id=@id'),
         parameters: {'id': quote.id},
       );
-      expect(status.first[0], 'received');
+      expect(status.first[0], 'pending');
     },
     skip: url == null
         ? 'Set TEST_DATABASE_URL with migrations and development seed.'

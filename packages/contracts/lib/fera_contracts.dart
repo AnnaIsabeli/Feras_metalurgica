@@ -1,4 +1,16 @@
-enum RequestStatus { received, needsInformation, drafting, quoted, closed }
+enum RequestStatus {
+  received,
+  needsInformation,
+  drafting,
+  quoted,
+  closed,
+  pending,
+  approved,
+  rejected,
+  inProduction,
+  completed,
+  cancelled,
+}
 
 class QuoteRequest {
   const QuoteRequest({
@@ -9,10 +21,20 @@ class QuoteRequest {
     required this.quantity,
     required this.status,
     required this.createdAt,
+    this.createdBy,
+    this.customerName,
+    this.customerContact,
+    this.unitPriceCents,
+    this.pricingId,
   });
 
   final String id;
-  final String buyerId;
+  final String? buyerId;
+  final String? createdBy;
+  final String? customerName;
+  final String? customerContact;
+  final int? unitPriceCents;
+  final String? pricingId;
   final String product;
   final String description;
   final int quantity;
@@ -21,7 +43,12 @@ class QuoteRequest {
 
   factory QuoteRequest.fromJson(Map<String, dynamic> json) => QuoteRequest(
     id: json['id'] as String,
-    buyerId: json['buyerId'] as String,
+    buyerId: json['buyerId'] as String?,
+    createdBy: json['createdBy'] as String?,
+    customerName: json['customerName'] as String?,
+    customerContact: json['customerContact'] as String?,
+    unitPriceCents: json['unitPriceCents'] as int?,
+    pricingId: json['pricingId'] as String?,
     product: json['product'] as String,
     description: json['description'] as String,
     quantity: json['quantity'] as int,
@@ -32,6 +59,11 @@ class QuoteRequest {
   Map<String, dynamic> toJson() => {
     'id': id,
     'buyerId': buyerId,
+    'createdBy': createdBy,
+    'customerName': customerName,
+    'customerContact': customerContact,
+    'unitPriceCents': unitPriceCents,
+    'pricingId': pricingId,
     'product': product,
     'description': description,
     'quantity': quantity,

@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'admin/admin_screen.dart';
 
 import '../core/api_client.dart';
+import '../core/user_profile.dart';
 
 class AccountScreen extends StatefulWidget {
-  const AccountScreen({super.key, required this.api});
+  const AccountScreen({
+    super.key,
+    required this.api,
+    this.demonstration = true,
+    this.profile,
+  });
+  final bool demonstration;
+  final UserProfile? profile;
   final ApiClient api;
   @override
   State<AccountScreen> createState() => _AccountScreenState();
@@ -44,12 +53,54 @@ class _AccountScreenState extends State<AccountScreen> {
                   child: const Text('Tentar novamente'),
                 ),
               ] else ...[
-                const Icon(Icons.account_circle_outlined, size: 72),
-                const SizedBox(height: 16),
+                Center(
+                  child: ProfileAvatar(profile: widget.profile, size: 144),
+                ),
+                const SizedBox(height: 24),
+                if (widget.profile != null) ...[
+                  TextFormField(
+                    style: const TextStyle(color: Color(0xfff2f2f7)),
+                    initialValue: widget.profile!.name,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome',
+                      fillColor: Color(0xff2c2c2e),
+                      labelStyle: TextStyle(color: Color(0xffffa261)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    style: const TextStyle(color: Color(0xfff2f2f7)),
+                    initialValue: widget.profile!.email,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'E-mail',
+                      fillColor: Color(0xff2c2c2e),
+                      labelStyle: TextStyle(color: Color(0xffffa261)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (snapshot.data!['adminEligible'] == true) ...[
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AdminScreen(api: widget.api),
+                      ),
+                    ),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    label: const Text('Administração'),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 ListTile(
                   title: const Text('Tipo de acesso'),
                   subtitle: Text(
-                    snapshot.data!['role'] == 'seller'
+                    snapshot.data!['adminEligible'] == true
+                        ? (snapshot.data!['role'] == 'seller'
+                              ? 'Administrador · Vendedor'
+                              : 'Administrador')
+                        : snapshot.data!['role'] == 'seller'
                         ? 'Vendedor'
                         : 'Comprador',
                   ),
@@ -64,8 +115,10 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                 const Divider(),
-                const Text(
-                  'Você está usando uma conta de demonstração. O login com Google ainda não está disponível.',
+                Text(
+                  widget.demonstration
+                      ? 'Você está usando uma conta de demonstração.'
+                      : 'Conta autenticada com Google. As permissões são controladas pela equipe.',
                 ),
               ],
             ],

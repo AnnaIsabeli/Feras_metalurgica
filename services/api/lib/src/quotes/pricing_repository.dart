@@ -1,3 +1,5 @@
+import 'package:fera_contracts/fera_contracts.dart';
+
 abstract interface class PricingRepository {
   Future<List<Map<String, dynamic>>> materials();
   Future<Map<String, dynamic>?> material(String id);
@@ -7,6 +9,7 @@ abstract interface class PricingRepository {
     required Map<String, dynamic> input,
     required Map<String, dynamic> result,
     required int totalPriceCents,
+    QuoteRequest? newRequest,
   });
   Future<Map<String, dynamic>?> latest(String requestId);
 }

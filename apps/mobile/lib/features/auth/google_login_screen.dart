@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/api_client.dart';
+import '../../core/api_endpoint.dart';
 import '../../core/user_profile.dart';
 import 'login_presentation.dart';
 import 'google_button_stub.dart'
@@ -30,42 +32,66 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
 
   Future<void> initialize() async {
     try {
+      const webClientId = String.fromEnvironment(
+        'GOOGLE_WEB_CLIENT_ID',
+        defaultValue:
+            '965632441479-ivdt904eif0bh4202ntiua0vn1blj8av.apps.googleusercontent.com',
+      );
       await (initialization ??= GoogleSignIn.instance.initialize(
-        clientId: const String.fromEnvironment(
-          'GOOGLE_WEB_CLIENT_ID',
-          defaultValue:
-              '965632441479-ivdt904eif0bh4202ntiua0vn1blj8av.apps.googleusercontent.com',
-        ),
+        clientId: kIsWeb ? webClientId : null,
+        serverClientId: kIsWeb ? null : webClientId,
       ));
       if (!mounted) return;
-      subscription = GoogleSignIn.instance.authenticationEvents.listen(
-        (event) {
-          if (event is GoogleSignInAuthenticationEventSignIn) {
+      if (kIsWeb) {
+        subscription = GoogleSignIn.instance.authenticationEvents.listen((
+          event,
+        ) {
+          if (!busy && event is GoogleSignInAuthenticationEventSignIn) {
             unawaited(enter(event.user));
           }
-        },
-        onError: (Object _) {
-          if (mounted) {
-            setState(() {
-              error = 'Não foi possível entrar com Google. Tente novamente.';
-              busy = false;
-            });
-          }
-        },
-      );
+        }, onError: (Object _) => showSignInError());
+      }
       setState(() => ready = true);
     } catch (_) {
       if (mounted) {
         setState(
           () => error =
-              'Não foi possível carregar o login. Atualize a página e tente novamente.',
+              'Não foi possível carregar o login. Reabra o ORCEX e tente novamente.',
         );
       }
     }
   }
 
-  Future<void> enter(GoogleSignInAccount user) async {
+  void showSignInError() {
+    if (!mounted) return;
+    setState(() {
+      error = 'Não foi possível entrar com Google. Tente novamente.';
+      busy = false;
+    });
+  }
+
+  Future<void> authenticate() async {
     if (busy) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final account = await GoogleSignIn.instance.authenticate();
+      if (mounted) await enter(account);
+    } on GoogleSignInException catch (exception) {
+      if (!mounted) return;
+      if (exception.code == GoogleSignInExceptionCode.canceled) {
+        setState(() => busy = false);
+      } else {
+        showSignInError();
+      }
+    } catch (_) {
+      showSignInError();
+    }
+  }
+
+  Future<void> enter(GoogleSignInAccount user) async {
     setState(() {
       busy = true;
       error = null;
@@ -79,10 +105,7 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
           'O Google não devolveu uma identificação válida.',
         );
       }
-      api = ApiClient(
-        baseUrl: Uri.base.resolve('/api').toString(),
-        token: token,
-      );
+      api = ApiClient(baseUrl: apiBaseUrl(authenticated: true), token: token);
       final me = await api.get('/v1/me');
       if (!mounted) return;
       final claims =
@@ -143,6 +166,6 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
     ready: ready,
     busy: busy,
     error: error,
-    signInButton: ready && !busy ? googleButton() : null,
+    signInButton: ready && !busy ? googleButton(onPressed: authenticate) : null,
   );
 }

@@ -5,6 +5,7 @@ import 'features/auth/google_login_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'core/api_endpoint.dart';
 import 'core/user_profile.dart';
 import 'features/pricing/pricing_screen.dart';
 import 'features/account_screen.dart';
@@ -107,12 +108,7 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     api = ApiClient(
-      baseUrl: widget.token != null
-          ? Uri.base.resolve('/api').toString()
-          : const String.fromEnvironment(
-              'API_BASE_URL',
-              defaultValue: 'http://localhost:8080',
-            ),
+      baseUrl: apiBaseUrl(authenticated: widget.token != null),
       token: widget.token ?? (widget.seller ? 'demo-seller' : 'demo-buyer'),
     );
     quotes = QuoteViewModel(ApiQuoteRepository(api));

@@ -1,0 +1,35 @@
+name: Android validation APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/kan-50-android]
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: apps/mobile
+      - run: flutter analyze
+        working-directory: apps/mobile
+      - run: flutter test
+        working-directory: apps/mobile
+      - name: Build validation APK against HTTPS API
+        working-directory: apps/mobile
+        run: flutter build apk --release --dart-define=API_BASE_URL=https://orcex.shop/api
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orcex-android-validation
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7

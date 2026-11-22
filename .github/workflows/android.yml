@@ -19,13 +19,6 @@ jobs:
           flutter-version: '3.47.9'
           channel: stable
           cache: true
-      - name: Prepare Android platform in isolated temporary project
-        run: |
-          flutter create --platforms=android --org shop.orcex --project-name fera_mobile "$RUNNER_TEMP/orcex_android"
-          cp -R "$RUNNER_TEMP/orcex_android/android" apps/mobile/android
-          manifest=apps/mobile/android/app/src/main/AndroidManifest.xml
-          sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
-          sed -i 's/android:label="fera_mobile"/android:label="ORCEX"/' "$manifest"
       - run: flutter pub get
         working-directory: apps/mobile
       - run: flutter analyze
@@ -38,7 +31,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: orcex-android-validation
-          path: |
-            apps/mobile/build/app/outputs/flutter-apk/app-release.apk
-            apps/mobile/android
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7

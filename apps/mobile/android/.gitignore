@@ -1,0 +1,11 @@
+/.gradle/
+/.cxx/
+/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+/gradle/wrapper/gradle-wrapper.jar
+/gradlew
+/gradlew.bat
+/local.properties
+/key.properties
+*.jks
+*.keystore
+*.p12

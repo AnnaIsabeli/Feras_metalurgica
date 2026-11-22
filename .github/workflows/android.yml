@@ -1,4 +1,4 @@
-name: Android development build
+name: Android validation APK
 on:
   workflow_dispatch:
   push:
@@ -23,19 +23,22 @@ jobs:
         run: |
           flutter create --platforms=android --org shop.orcex --project-name fera_mobile "$RUNNER_TEMP/orcex_android"
           cp -R "$RUNNER_TEMP/orcex_android/android" apps/mobile/android
+          manifest=apps/mobile/android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET" />' "$manifest"
+          sed -i 's/android:label="fera_mobile"/android:label="ORCEX"/' "$manifest"
       - run: flutter pub get
         working-directory: apps/mobile
       - run: flutter analyze
         working-directory: apps/mobile
       - run: flutter test
         working-directory: apps/mobile
-      - name: Build development APK against HTTPS API
+      - name: Build validation APK against HTTPS API
         working-directory: apps/mobile
-        run: flutter build apk --debug --dart-define=ENABLE_DEMO=true --dart-define=API_BASE_URL=https://dev.orcex.shop/api
+        run: flutter build apk --release --dart-define=API_BASE_URL=https://orcex.shop/api
       - uses: actions/upload-artifact@v4
         with:
-          name: orcex-android-development
+          name: orcex-android-validation
           path: |
-            apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+            apps/mobile/build/app/outputs/flutter-apk/app-release.apk
             apps/mobile/android
           retention-days: 7

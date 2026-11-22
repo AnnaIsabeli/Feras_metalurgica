@@ -1,3 +1,4 @@
 import 'package:flutter/material.dart';
 
-Widget googleButton() => const Text('Login Google disponível na versão web.');
+Widget googleButton({required VoidCallback onPressed}) =>
+    FilledButton(onPressed: onPressed, child: const Text('Entrar com Google'));
